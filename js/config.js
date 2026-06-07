@@ -2,7 +2,8 @@ export const CONFIG = {
   maxSpeed: 83.3,  // 300 km/h
   engineForce: 4200,
   brakeForce: 80,
-  steerAngle: 0.8,
+  // 转向角度：减小值以获得更精确的操控感
+  steerAngle: 0.4,
   kartMass: 150,
   chassisW: 1.1, chassisH: 0.2, chassisL: 2.2,
   wheelRadius: 0.35,
