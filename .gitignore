@@ -1,1 +1,5 @@
 .agent-uploads/
+
+# 调试/检查脚本（非项目核心文件）
+check_*.py
+check_*.js
