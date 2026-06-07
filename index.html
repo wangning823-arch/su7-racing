@@ -19,7 +19,13 @@ canvas{display:block}
 #hud-time{position:absolute;top:20px;right:20px;font-size:1.5em;color:#fff;text-shadow:2px 2px 4px #000}
 #hud-speed{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:2.5em;color:#0f0;text-shadow:0 0 10px rgba(0,255,0,0.5);font-weight:bold}
 #hud-countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8em;color:#e94560;text-shadow:0 0 30px rgba(233,69,96,0.8);display:none}
+/* 完赛提示：显示名次和用时，带淡入动画 */
+#hud-finished{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);font-size:2.5em;color:#2ecc71;text-shadow:0 0 20px rgba(46,204,113,0.8);display:none;flex-direction:column;align-items:center;opacity:0;transition:opacity 0.3s;line-height:1.4}
 #minimap{position:absolute;bottom:20px;right:20px;border:2px solid rgba(255,255,255,0.3);border-radius:8px}
+/* 移动端小地图移到顶部，避免与摇杆冲突 */
+@media(max-width:768px){
+#minimap{bottom:auto;top:20px;right:20px}
+}
 #results{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:100}
 #results h1{font-size:3em;color:#e94560;margin-bottom:20px}
 #results table{border-collapse:collapse;margin:20px}
@@ -42,14 +48,12 @@ canvas{display:block}
 #map-select button{font-size:1.3em;padding:12px 50px;border:2px solid #e94560;background:transparent;color:#e94560;cursor:pointer;border-radius:8px;transition:all 0.3s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #map-select button:hover,#map-select button:active{background:#e94560;color:#fff}
 #map-select button:disabled{opacity:0.4;cursor:not-allowed}
+/* 触摸控制区域：摇杆控制方向+油门刹车，漂移按钮单独 */
 #touch-controls{position:absolute;bottom:0;left:0;width:100%;height:50%;pointer-events:none;z-index:15;display:none}
-#joystick-zone{position:absolute;bottom:20px;left:20px;width:180px;height:180px;pointer-events:auto}
+/* 摇杆放在右侧，上下推=油门/刹车，左右推=转向 */
+#joystick-zone{position:absolute;bottom:20px;right:20px;width:180px;height:180px;pointer-events:auto}
 .touch-btn{pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;font-weight:bold;user-select:none;-webkit-user-select:none}
-#throttle-btn{position:absolute;bottom:100px;right:30px;width:90px;height:90px;border-radius:50%;background:rgba(46,204,113,0.6);border:3px solid #2ecc71;color:#fff;font-size:0.9em}
-#throttle-btn:active,#throttle-btn.active{background:rgba(46,204,113,0.9)}
-#brake-btn{position:absolute;bottom:20px;right:140px;width:80px;height:80px;border-radius:50%;background:rgba(52,152,219,0.6);border:3px solid #3498db;color:#fff;font-size:0.8em}
-#brake-btn:active,#brake-btn.active{background:rgba(52,152,219,0.9)}
-#drift-btn{position:absolute;bottom:20px;right:30px;width:80px;height:80px;border-radius:50%;background:rgba(233,69,96,0.6);border:3px solid #e94560;color:#fff;font-size:0.8em}
+#drift-btn{position:absolute;bottom:20px;left:20px;width:80px;height:80px;border-radius:50%;background:rgba(233,69,96,0.6);border:3px solid #e94560;color:#fff;font-size:0.8em}
 #drift-btn:active,#drift-btn.active{background:rgba(233,69,96,0.9)}
 </style>
 </head>
@@ -70,7 +74,6 @@ canvas{display:block}
 <div id="map-select">
 <h1>选择赛道</h1>
 <div id="map-grid"></div>
-<button id="confirmMapBtn">确认选择</button>
 </div>
 
 <div id="hud">
@@ -79,6 +82,7 @@ canvas{display:block}
 <div id="hud-time">00:00.00</div>
 <div id="hud-speed">0 km/h</div>
 <div id="hud-countdown">3</div>
+<div id="hud-finished"></div>
 <canvas id="minimap" width="160" height="160"></canvas>
 </div>
 
@@ -90,8 +94,6 @@ canvas{display:block}
 
 <div id="touch-controls">
 <div id="joystick-zone"></div>
-<div id="throttle-btn" class="touch-btn">油门</div>
-<div id="brake-btn" class="touch-btn">刹车</div>
 <div id="drift-btn" class="touch-btn">漂移</div>
 </div>
 

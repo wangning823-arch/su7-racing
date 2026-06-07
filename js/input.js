@@ -12,8 +12,6 @@ export class InputManager {
   initTouch() {
     document.getElementById('touch-controls').style.display = 'block';
     const zone = document.getElementById('joystick-zone');
-    const throttleBtn = document.getElementById('throttle-btn');
-    const brakeBtn = document.getElementById('brake-btn');
     const driftBtn = document.getElementById('drift-btn');
 
     if (typeof nipplejs !== 'undefined') {
@@ -24,24 +22,32 @@ export class InputManager {
         color: 'white',
         size: 120
       });
+      // 摇杆控制：左右=转向，上推=油门，下推=刹车
       this.joystick.on('move', (evt, data) => {
         const angle = data.angle ? data.angle.radian : 0;
         const force = Math.min(data.force || 0, 2) / 2;
         const dx = Math.cos(angle) * force;
+        const dy = Math.sin(angle) * force;
         this.touch.steer = Math.max(-1, Math.min(1, dx));
+        // 向上推=加速，向下推=刹车（死区0.1避免误触）
+        if (dy > 0.1) {
+          this.touch.throttle = Math.min(1, dy);
+          this.touch.brake = 0;
+        } else if (dy < -0.1) {
+          this.touch.brake = Math.min(1, Math.abs(dy));
+          this.touch.throttle = 0;
+        } else {
+          this.touch.throttle = 0;
+          this.touch.brake = 0;
+        }
       });
       this.joystick.on('end', () => {
         this.touch.steer = 0;
+        this.touch.throttle = 0;
+        this.touch.brake = 0;
       });
     }
 
-    const addBtnEvents = (el, prop) => {
-      el.addEventListener('touchstart', (e) => { e.preventDefault(); this.touch[prop] = 1; el.classList.add('active'); });
-      el.addEventListener('touchend', (e) => { e.preventDefault(); this.touch[prop] = 0; el.classList.remove('active'); });
-      el.addEventListener('touchcancel', (e) => { e.preventDefault(); this.touch[prop] = 0; el.classList.remove('active'); });
-    };
-    addBtnEvents(throttleBtn, 'throttle');
-    addBtnEvents(brakeBtn, 'brake');
     driftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.touch.drift = true; driftBtn.classList.add('active'); });
     driftBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.touch.drift = false; driftBtn.classList.remove('active'); });
     driftBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); this.touch.drift = false; driftBtn.classList.remove('active'); });

@@ -39,4 +39,23 @@ export class HUD {
     this.elCountdown.style.display = 'none';
     this.elCountdown.style.color = '#e94560';
   }
+
+  /**
+   * 显示完赛提示
+   * @param {number} position - 名次
+   * @param {string} time - 完赛用时
+   */
+  showFinished(position, time) {
+    const el = document.getElementById('hud-finished');
+    el.innerHTML = `🏁 已完赛<br><span style="font-size:0.6em">第 ${position} 名 · ${time}</span>`;
+    el.style.display = 'flex';
+    setTimeout(() => { el.style.opacity = '1'; }, 10);
+  }
+
+  /** 隐藏完赛提示（带淡出动画） */
+  hideFinished() {
+    const el = document.getElementById('hud-finished');
+    el.style.opacity = '0';
+    setTimeout(() => { el.style.display = 'none'; }, 300);
+  }
 }

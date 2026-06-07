@@ -88,13 +88,14 @@ export class KartPhysics {
         const currentSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
         let targetSpeed;
 
-        // SU7 Ultra acceleration profile
-        if (currentSpeed < 27.78) {
-          targetSpeed = currentSpeed + 55 * dt * throttle;
-        } else if (currentSpeed < 55.56) {
-          targetSpeed = currentSpeed + 18.5 * dt * throttle;
-        } else {
-          targetSpeed = currentSpeed + 9.3 * dt * throttle;
+        // SU7 Ultra加速曲线：分三段，低速段加速最快，高速段逐渐减弱
+        // 原始值除以4以获得更好的操控感
+        if (currentSpeed < 27.78) {        // 0-100km/h
+          targetSpeed = currentSpeed + 13.75 * dt * throttle;
+        } else if (currentSpeed < 55.56) { // 100-200km/h
+          targetSpeed = currentSpeed + 4.625 * dt * throttle;
+        } else {                           // 200-300km/h
+          targetSpeed = currentSpeed + 2.325 * dt * throttle;
         }
 
         targetSpeed = Math.min(targetSpeed, CONFIG.maxSpeed);
@@ -215,14 +216,21 @@ export class KartPhysics {
     const slerpFactor = 0.4; // Slightly faster than update() for ground following
     currentQuat.slerp(targetQuat, slerpFactor, this.chassisBody.quaternion);
 
-    const halfTrack = (this.track._trackWidth || CONFIG.trackWidth) / 2 - 1.0;
-    if (Math.abs(info.lateralOffset) > halfTrack) {
-      const pushDir = info.lateralOffset > 0 ? -1 : 1;
-      const overshoot = Math.abs(info.lateralOffset) - halfTrack;
-      pos.x += info.right.x * pushDir * overshoot * 0.5;
-      pos.z += info.right.z * pushDir * overshoot * 0.5;
+    // 物理边界与视觉护栏位置对齐
+    // 视觉护栏位于 barrierOffset = hw + 2 处，减去车身半宽确保整车在护栏内
+    const hw = (this.track._trackWidth || CONFIG.trackWidth) / 2;
+    const carHalfW = CONFIG.chassisW / 2;
+    const effectiveHalf = hw + 2 - carHalfW;
+    if (Math.abs(info.lateralOffset) > effectiveHalf) {
+      // 硬边界：将车精确 snap 到边界位置
+      const side = info.lateralOffset > 0 ? 1 : -1;
+      const targetOffset = effectiveHalf * side;
+      const correction = targetOffset - info.lateralOffset;
+      pos.x += info.right.x * correction;
+      pos.z += info.right.z * correction;
       this.chassisBody.position = pos;
 
+      // 碰撞时消除所有侧向速度（模拟刚性墙壁）
       const vel = this.chassisBody.velocity;
       const latVel = vel.x * info.right.x + vel.z * info.right.z;
       vel.x -= info.right.x * latVel;

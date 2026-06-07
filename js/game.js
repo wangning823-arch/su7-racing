@@ -3,7 +3,7 @@ import * as CANNON from 'cannon-es';
 import { CONFIG } from './config.js?v=2';
 import { InputManager } from './input.js?v=2';
 import { TrackBuilder } from './track.js?v=2';
-import { TRACKS, DEFAULT_THEME } from './tracks.js?v=1';
+import { TRACKS, DEFAULT_THEME } from './tracks.js?v=2';
 import { Kart } from './kart.js?v=2';
 import { KartRenderer } from './kart-renderer.js?v=2';
 import { AIController } from './ai.js?v=2';
@@ -133,6 +133,7 @@ export class Game {
       this.aiControllers[i].initPosition(startPositions[i + 1].pos);
     }
 
+    this._finishedNotified = false;
     this.raceManager.startCountdown();
     this.running = true;
     this.clock.start();
@@ -152,9 +153,18 @@ export class Game {
     // Handle input based on race state
     if (this.raceManager.state === 'RACING') {
       this.hud.hideCountdown();
-      // Cache input once per frame
-      const rawInput = this.input.getInput();
-      const playerInput = { ...rawInput, steer: -rawInput.steer };
+      // 玩家已完赛后停止接收输入，并显示完赛提示
+      let playerInput;
+      if (this.player.finished) {
+        playerInput = { throttle: 0, brake: 0, steer: 0 };
+        if (!this._finishedNotified) {
+          this.hud.showFinished(this.player.position, this.raceManager.getTimeText(this.player.finishTime));
+          this._finishedNotified = true;
+        }
+      } else {
+        const rawInput = this.input.getInput();
+        playerInput = { ...rawInput, steer: -rawInput.steer };
+      }
       const aiInputs = this.aiControllers.map((ai, i) => ai.getInput(this.karts[i + 1]));
 
       // Physics loop: apply forces then step each substep
@@ -283,19 +293,15 @@ export class Game {
       const canvas = card.querySelector('canvas');
       this.drawTrackPreview(canvas, track.points);
 
+      // 点击赛道卡片直接开始比赛（无需确认按钮）
       card.addEventListener('click', () => {
-        grid.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
         this.selectedTrackId = track.id;
+        this.buildSelectedTrack();
       });
 
       grid.appendChild(card);
     }
 
-    document.getElementById('confirmMapBtn').addEventListener('click', () => {
-      if (!this.selectedTrackId) return;
-      this.buildSelectedTrack();
-    });
   }
 
   drawTrackPreview(canvas, points) {

@@ -10,7 +10,8 @@ export const CONFIG = {
   trackSegments: 1000,
   totalLaps: 3,
   numAI: 1,
-  aiSpeeds: [0.33, 0.30, 0.28, 0.25, 0.22],  // AI最高100km/h (83.3 * 0.33 ≈ 27.5 m/s)
+  // AI速度系数：索引越大越快（越困难），0.6≈180km/h，1.0≈300km/h
+  aiSpeeds: [0.6, 0.7, 0.8, 0.9, 1.0],
   aiLookaheads: [3, 3, 2, 2, 2],
   cameraDistance: 8,
   cameraHeight: 3.5,

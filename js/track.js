@@ -172,33 +172,74 @@ export class TrackBuilder {
       }
       const tex = new THREE.CanvasTexture(canvas);
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
+      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.receiveShadow = true;
       this._add(mesh);
     }
   }
 
+  /**
+   * 构建赛道护栏
+   * 改进点：在急弯处，内侧护栏会穿入路面，通过检测并跳过这些点
+   * 让护栏自动绕过弯道外侧
+   */
   buildBarriers() {
-    const segs = 200;
-    const frames = this.spline.computeFrenetFrames(segs, true);
-    const hw = (this._trackWidth || CONFIG.trackWidth) / 2 + 1.3;
+    const hw = (this._trackWidth || CONFIG.trackWidth) / 2;
+    const barrierOffset = hw + 2; // 护栏位于路面边缘外2单位
     const h = 0.8;
+    const N = 800;
+
+    // 采样路面中心点
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      pts.push(this.spline.getPointAt(i / N));
+    }
+
+    // 计算每个路段的垂直方向（用于护栏偏移）
+    const perps = [];
+    for (let i = 0; i < N; i++) {
+      const dx = pts[i + 1].x - pts[i].x;
+      const dz = pts[i + 1].z - pts[i].z;
+      const len = Math.sqrt(dx * dx + dz * dz) || 1;
+      perps.push({ x: -dz / len, z: dx / len });
+    }
+
+    // 检测护栏候选点是否在路面内（急弯时内侧偏移会穿入路面）
+    const bo2 = barrierOffset * barrierOffset;
+    function insideRoad(px, pz) {
+      for (let k = 0; k <= N; k += 2) {
+        const dx = px - pts[k].x, dz = pz - pts[k].z;
+        if (dx * dx + dz * dz < bo2) return true;
+      }
+      return false;
+    }
 
     for (let side of [-1, 1]) {
       const verts = [], indices = [];
-      for (let i = 0; i <= segs; i++) {
-        const p = this.spline.getPointAt(i / segs);
-        const b = frames.binormals[i];
-        const baseX = p.x + b.x * hw * side;
-        const baseY = p.y + b.y * hw * side;
-        const baseZ = p.z + b.z * hw * side;
-        // Barrier extends vertically (world up)
-        verts.push(baseX, baseY, baseZ, baseX, baseY + h, baseZ);
+      const barrier = [];
+
+      for (let i = 0; i <= N; i++) {
+        // Candidate barrier point: road center + perpendicular offset
+        const bx = pts[i].x + perps[Math.min(i, N - 1)].x * barrierOffset * side;
+        const bz = pts[i].z + perps[Math.min(i, N - 1)].z * barrierOffset * side;
+
+        // If this point falls inside the road surface, skip it.
+        // On sharp curves the inside offset lands on the road — skip it
+        // so the barrier draws a straight line from the last valid point
+        // to the next valid point, naturally going around the outside.
+        if (insideRoad(bx, bz)) continue;
+
+        barrier.push({ x: bx, y: pts[i].y, z: bz });
       }
-      for (let i = 0; i < segs; i++) {
-        const a = i * 2, b = a + 1;
-        const c = ((i + 1) % (segs + 1)) * 2, d = c + 1;
+
+      // Build geometry
+      for (let i = 0; i < barrier.length; i++) {
+        const p = barrier[i];
+        verts.push(p.x, p.y, p.z, p.x, p.y + h, p.z);
+      }
+      for (let i = 0; i < barrier.length - 1; i++) {
+        const a = i * 2, b = a + 1, c = (i + 1) * 2, d = c + 1;
         if (side === -1) indices.push(a, b, c, b, d, c);
         else indices.push(a, c, b, b, c, d);
       }
@@ -206,8 +247,7 @@ export class TrackBuilder {
       geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
       geo.setIndex(indices);
       geo.computeVertexNormals();
-
-      const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.5 });
+      const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.5, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.castShadow = true;
       this._add(mesh);
@@ -423,6 +463,9 @@ export class TrackBuilder {
     const right90 = new THREE.Vector3(t90.z, 0, -t90.x).normalize();
 
     const standPos = p90.clone().add(right90.clone().multiplyScalar(25));
+    // Skip scenery if it would be too close to the track (e.g. on sharp curves)
+    const hw = (this._trackWidth || CONFIG.trackWidth) / 2;
+    if (this.distToTrack(standPos.x, standPos.z) < hw + 12) return;
     const standGeo = new THREE.BoxGeometry(20, 4, 6);
     const standMat = new THREE.MeshStandardMaterial({ color: s.standColor ?? 0x34495e, roughness: 0.6 });
     const stand = new THREE.Mesh(standGeo, standMat);
@@ -542,7 +585,7 @@ export class TrackBuilder {
       const r = 80 + Math.random() * 30;
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
-      if (this.distToTrack(x, z) < 20) continue;
+      if (this.distToTrack(x, z) < 20 + (this._trackWidth || CONFIG.trackWidth) / 2) continue;
 
       // Dome
       const domeGeo = new THREE.SphereGeometry(3, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -568,7 +611,7 @@ export class TrackBuilder {
       const r = 60 + Math.random() * 20;
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
-      if (this.distToTrack(x, z) < 22) continue;
+      if (this.distToTrack(x, z) < 22 + (this._trackWidth || CONFIG.trackWidth) / 2) continue;
 
       const w = 10 + Math.random() * 5;
       const d = 14 + Math.random() * 5;
@@ -627,8 +670,8 @@ export class TrackBuilder {
   }
 
   _buildBilsteinBridge() {
-    // Place bridge at ~75% along track (Döttinger Höhe straight)
-    const t = 0.75;
+    // Place bridge at ~88% along track (Döttinger Höhe straight, near end)
+    const t = 0.88;
     const p = this.spline.getPointAt(t);
     const tangent = this.spline.getTangentAt(t);
     const right = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize();
@@ -744,17 +787,25 @@ export class TrackBuilder {
 
   buildBuildings() {
     const b = this.theme?.buildings;
-    if (!b) return;
+    if (!b || !b.count) return;
+    console.log('[buildBuildings] theme buildings:', b);
 
     const count = b.count ?? 80;
     const hw = (this._trackWidth || CONFIG.trackWidth) / 2;
-    const minDist = b.minDistToTrack ?? 10;
+    // Minimum clearance from building edge to track edge
+    const maxHalfSize = ((b.maxWidth ?? 14) / 2) + 2;
+    const baseMinDist = b.minDistToTrack ?? 10;
+    // Hard minimum: building center must be at least this far from spline center
+    // This prevents buildings from EVER appearing on the track
+    const hardMinDist = hw + 6; // 6 units minimum safety margin from track edge
 
     const buildingColors = [0x555566, 0x4a4a5a, 0x606070, 0x505060, 0x484858, 0x5a5a6a];
 
     const b2 = this.trackBounds;
     const buildRangeX = b2 ? Math.max(300, b2.width + 120) / 2 : 150;
     const buildRangeZ = b2 ? Math.max(300, b2.depth + 120) / 2 : 150;
+    // Minimum distance from building center to spline center
+    const requiredDist = Math.max(baseMinDist + hw + maxHalfSize, hardMinDist);
     for (let i = 0; i < count; i++) {
       let x, z;
       let attempts = 0;
@@ -762,8 +813,8 @@ export class TrackBuilder {
         x = (Math.random() - 0.5) * buildRangeX * 2;
         z = (Math.random() - 0.5) * buildRangeZ * 2;
         attempts++;
-      } while (this.distToTrack(x, z) < minDist && attempts < 50);
-      if (attempts >= 50) continue;
+      } while (this.distToTrack(x, z) < requiredDist && attempts < 100);
+      if (attempts >= 100) continue;
 
       const w = (b.minWidth ?? 6) + Math.random() * ((b.maxWidth ?? 14) - (b.minWidth ?? 6));
       const d = (b.minWidth ?? 6) + Math.random() * ((b.maxWidth ?? 14) - (b.minWidth ?? 6));
@@ -776,6 +827,16 @@ export class TrackBuilder {
       building.position.set(x, h / 2 - 2, z);
       building.castShadow = true;
       building.receiveShadow = true;
+
+      // Safety: verify building edge doesn't overlap track after placement
+      const actualHalfSize = Math.max(w, d) / 2;
+      if (this.distToTrack(x, z) < hw + actualHalfSize + 2) {
+        console.warn('[buildBuildings] Removing building too close to track:', x, z, 'dist:', this.distToTrack(x, z).toFixed(1));
+        geo.dispose();
+        mat.dispose();
+        continue;
+      }
+
       this._add(building);
 
       // Windows: emissive dots on building faces
@@ -800,7 +861,7 @@ export class TrackBuilder {
 
   distToTrack(x, z) {
     let minD = Infinity;
-    for (let t = 0; t < 1; t += 0.01) {
+    for (let t = 0; t < 1; t += 0.002) {
       const p = this.spline.getPointAt(t);
       const d = Math.sqrt((x - p.x) ** 2 + (z - p.z) ** 2);
       if (d < minD) minD = d;
@@ -812,7 +873,7 @@ export class TrackBuilder {
     if (!this.spline) return 0;
     let minD = Infinity;
     let bestT = 0;
-    for (let t = 0; t < 1; t += 0.01) {
+    for (let t = 0; t < 1; t += 0.002) {
       const p = this.spline.getPointAt(t);
       const d = (x - p.x) ** 2 + (z - p.z) ** 2;
       if (d < minD) { minD = d; bestT = t; }
