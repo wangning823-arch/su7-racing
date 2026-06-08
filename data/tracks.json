@@ -1722,7 +1722,7 @@
       "id": "f1-albert_park",
       "name": "阿尔伯特公园",
       "difficulty": "medium",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -39.7,
@@ -2230,7 +2230,7 @@
       "id": "f1-americas",
       "name": "美洲赛道",
       "difficulty": "medium",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -284.4,
@@ -2738,7 +2738,7 @@
       "id": "f1-baku",
       "name": "巴库赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           198.8,
@@ -3246,7 +3246,7 @@
       "id": "f1-catalunya",
       "name": "巴塞罗那",
       "difficulty": "medium",
-      "trackWidth": 9,
+      "trackWidth": 12,
       "points": [
         [
           139.6,
@@ -3754,7 +3754,7 @@
       "id": "f1-hungaroring",
       "name": "匈格罗宁",
       "difficulty": "hard",
-      "trackWidth": 10,
+      "trackWidth": 12,
       "points": [
         [
           -69.5,
@@ -4262,7 +4262,7 @@
       "id": "f1-interlagos",
       "name": "因特拉格斯",
       "difficulty": "medium",
-      "trackWidth": 11,
+      "trackWidth": 12,
       "points": [
         [
           -112,
@@ -4770,7 +4770,7 @@
       "id": "f1-jeddah",
       "name": "吉达赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           55.1,
@@ -5278,7 +5278,7 @@
       "id": "f1-losail",
       "name": "卡塔尔",
       "difficulty": "medium",
-      "trackWidth": 10,
+      "trackWidth": 12,
       "points": [
         [
           -100.5,
@@ -5786,7 +5786,7 @@
       "id": "f1-marina_bay",
       "name": "新加坡赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           237,
@@ -6294,7 +6294,7 @@
       "id": "f1-miami",
       "name": "迈阿密",
       "difficulty": "medium",
-      "trackWidth": 9,
+      "trackWidth": 12,
       "points": [
         [
           -33.6,
@@ -6802,7 +6802,7 @@
       "id": "f1-monaco",
       "name": "蒙特卡洛",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -177.3,
@@ -7310,7 +7310,7 @@
       "id": "f1-monza",
       "name": "蒙扎赛道",
       "difficulty": "easy",
-      "trackWidth": 9,
+      "trackWidth": 12,
       "points": [
         [
           -108.7,
@@ -7818,7 +7818,7 @@
       "id": "f1-red_bull_ring",
       "name": "红牛环",
       "difficulty": "easy",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           132.1,
@@ -8326,7 +8326,7 @@
       "id": "f1-rodriguez",
       "name": "墨西哥城",
       "difficulty": "medium",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -185.3,
@@ -8834,7 +8834,7 @@
       "id": "f1-shanghai",
       "name": "上海赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           43.4,
@@ -9342,7 +9342,7 @@
       "id": "f1-silverstone",
       "name": "银石赛道",
       "difficulty": "medium",
-      "trackWidth": 9,
+      "trackWidth": 12,
       "points": [
         [
           -152.9,
@@ -9850,7 +9850,7 @@
       "id": "f1-spa",
       "name": "斯帕赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -95.7,
@@ -10358,7 +10358,7 @@
       "id": "f1-suzuka",
       "name": "铃鹿赛道",
       "difficulty": "hard",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           -240.1,
@@ -10866,7 +10866,7 @@
       "id": "f1-vegas",
       "name": "拉斯维加斯",
       "difficulty": "medium",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           111.4,
@@ -11374,7 +11374,7 @@
       "id": "f1-villeneuve",
       "name": "伊莫拉",
       "difficulty": "medium",
-      "trackWidth": 8,
+      "trackWidth": 12,
       "points": [
         [
           85.7,
@@ -11882,7 +11882,7 @@
       "id": "f1-yas_marina",
       "name": "亚斯码头",
       "difficulty": "hard",
-      "trackWidth": 9,
+      "trackWidth": 12,
       "points": [
         [
           -26.3,
@@ -12390,7 +12390,7 @@
       "id": "f1-zandvoort",
       "name": "赞德沃特",
       "difficulty": "medium",
-      "trackWidth": 10,
+      "trackWidth": 12,
       "points": [
         [
           -149.1,
