@@ -1,17 +1,17 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { CONFIG } from './config.js?v=3';
-import { InputManager } from './input.js?v=3';
-import { TrackBuilder } from './track.js?v=3';
-import { TRACKS, DEFAULT_THEME } from './tracks.js?v=3';
-import { Kart } from './kart.js?v=3';
-import { KartRenderer } from './kart-renderer.js?v=3';
-import { AIController } from './ai.js?v=3';
-import { CameraController } from './camera.js?v=3';
-import { RaceManager } from './race.js?v=3';
-import { MiniMap } from './minimap.js?v=3';
-import { HUD } from './hud.js?v=3';
-import { ParticleSystem } from './particles.js?v=3';
+import { CONFIG } from './config.js?v=4';
+import { InputManager } from './input.js?v=4';
+import { TrackBuilder } from './track.js?v=4';
+import { TRACKS, DEFAULT_THEME } from './tracks.js?v=4';
+import { Kart } from './kart.js?v=4';
+import { KartRenderer } from './kart-renderer.js?v=4';
+import { AIController } from './ai.js?v=4';
+import { CameraController } from './camera.js?v=4';
+import { RaceManager } from './race.js?v=4';
+import { MiniMap } from './minimap.js?v=4';
+import { HUD } from './hud.js?v=4';
+import { ParticleSystem } from './particles.js?v=4';
 
 export class Game {
   constructor() {
@@ -35,13 +35,13 @@ export class Game {
     this.running = false;
 
     // Performance monitoring
-    this._fps = 60;
+    this._fps = 0;
     this._fpsFrames = 0;
     this._fpsLastTime = 0;
   }
 
   init() {
-    // Renderer - maximum quality, force high-performance GPU
+    // Renderer - maximum quality
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance'
@@ -169,7 +169,7 @@ export class Game {
     let dt = this.clock.getDelta();
     if (dt > 0.1) dt = 0.1;
 
-    // FPS counting - count frames per second
+    // FPS counting - simple frame counter per second
     this._fpsFrames++;
     const now = performance.now();
     if (this._fpsLastTime === 0) {
@@ -179,6 +179,7 @@ export class Game {
       this._fpsFrames = 0;
       this._fpsLastTime = now;
     }
+    const displayFps = this._fps;
 
     // Update race state
     this.raceManager.update(dt);
@@ -256,7 +257,7 @@ export class Game {
 
       // HUD
       this.hud.update(this.player, this.raceManager);
-      this.hud.updateFps(this._fps);
+      this.hud.updateFps(displayFps);
       this.minimap.draw(this.karts);
 
       // Particles
@@ -280,7 +281,7 @@ export class Game {
 
       // Camera still works during countdown
       this.cameraController.update(this.player, dt);
-      this.hud.updateFps(this._fps);
+      this.hud.updateFps(displayFps);
       this.minimap.draw(this.karts);
 
     } else if (this.raceManager.state === 'FINISHED') {
@@ -292,6 +293,9 @@ export class Game {
   }
 
   showResults() {
+    // Stop animation loop
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+
     this.hud.hide();
     const table = document.getElementById('results-table');
     table.innerHTML = '<tr><th>名次</th><th>选手</th><th>时间</th></tr>';
@@ -380,6 +384,9 @@ export class Game {
 
   showMapSelect() {
     this.running = false;
+    // Stop animation loop
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+
     document.getElementById('menu').style.display = 'none';
     document.getElementById('results').style.display = 'none';
     document.getElementById('hud').style.display = 'none';

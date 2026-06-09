@@ -1,4 +1,4 @@
-import { Game } from './game.js?v=3';
+import { Game } from './game.js?v=4';
 
 const game = new Game();
 window.game = game;  // 暴露给Puppeteer测试脚本
