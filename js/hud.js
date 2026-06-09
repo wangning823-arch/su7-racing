@@ -4,6 +4,7 @@ export class HUD {
   constructor() {
     this.elPosition = document.getElementById('hud-position');
     this.elLap = document.getElementById('hud-lap');
+    this.elFps = document.getElementById('hud-fps');
     this.elTime = document.getElementById('hud-time');
     this.elSpeed = document.getElementById('hud-speed');
     this.elCountdown = document.getElementById('hud-countdown');
@@ -19,6 +20,25 @@ export class HUD {
     this.elTime.textContent = raceManager.getTimeText(raceManager.raceTime);
     const speed = Math.round(playerKart.physics.speed * 3.6);
     this.elSpeed.textContent = `${speed} km/h`;
+  }
+
+  /**
+   * 更新FPS显示
+   * @param {number} fps - 当前帧率
+   */
+  updateFps(fps) {
+    if (this.elFps) {
+      // Show FPS with approximation indicator
+      this.elFps.textContent = `~${fps} FPS`;
+      // Color code: green for good, yellow for medium, red for low
+      if (fps >= 50) {
+        this.elFps.style.color = '#2ecc71';
+      } else if (fps >= 30) {
+        this.elFps.style.color = '#f39c12';
+      } else {
+        this.elFps.style.color = '#e74c3c';
+      }
+    }
   }
 
   showCountdown(time) {

@@ -1,17 +1,17 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { CONFIG } from './config.js?v=2';
-import { InputManager } from './input.js?v=2';
-import { TrackBuilder } from './track.js?v=2';
-import { TRACKS, DEFAULT_THEME } from './tracks.js?v=2';
-import { Kart } from './kart.js?v=2';
-import { KartRenderer } from './kart-renderer.js?v=2';
-import { AIController } from './ai.js?v=2';
-import { CameraController } from './camera.js?v=2';
-import { RaceManager } from './race.js?v=2';
-import { MiniMap } from './minimap.js?v=2';
-import { HUD } from './hud.js?v=2';
-import { ParticleSystem } from './particles.js?v=2';
+import { CONFIG } from './config.js?v=3';
+import { InputManager } from './input.js?v=3';
+import { TrackBuilder } from './track.js?v=3';
+import { TRACKS, DEFAULT_THEME } from './tracks.js?v=3';
+import { Kart } from './kart.js?v=3';
+import { KartRenderer } from './kart-renderer.js?v=3';
+import { AIController } from './ai.js?v=3';
+import { CameraController } from './camera.js?v=3';
+import { RaceManager } from './race.js?v=3';
+import { MiniMap } from './minimap.js?v=3';
+import { HUD } from './hud.js?v=3';
+import { ParticleSystem } from './particles.js?v=3';
 
 export class Game {
   constructor() {
@@ -33,18 +33,23 @@ export class Game {
     this.accumulator = 0;
     this.fixedDt = 1 / 60;
     this.running = false;
+
+    // Performance monitoring
+    this._fps = 60;
+    this._fpsFrames = 0;
+    this._fpsLastTime = 0;
   }
 
   init() {
-    // Detect if likely desktop (large screen) to auto-adjust quality
-    const isDesktop = window.innerWidth > 1024 || window.innerHeight > 768;
-
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: !isDesktop });
+    // Renderer - maximum quality, force high-performance GPU
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(isDesktop ? 1 : Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = isDesktop ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
     document.body.appendChild(this.renderer.domElement);
@@ -64,13 +69,17 @@ export class Game {
     const sun = new THREE.DirectionalLight(0xffffff, 1.0);
     sun.position.set(50, 100, 50);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(isDesktop ? 1024 : 2048, isDesktop ? 1024 : 2048);
+    // High resolution shadow map for crisp shadows
+    sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.left = -80;
     sun.shadow.camera.right = 80;
     sun.shadow.camera.top = 80;
     sun.shadow.camera.bottom = -80;
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 200;
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 300;
+    // Improve shadow quality - bias to reduce shadow acne
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
     this.sun = sun;
     this.scene.add(sun);
     this.scene.add(sun.target);
@@ -146,21 +155,30 @@ export class Game {
 
   /**
    * 启动动画循环
-   * 使用单独的animate方法启动，_tick方法执行实际逻辑
-   * 这样可以安全地取消旧的RAF回调，避免重复循环
    */
   animate() {
     if (this._rafId) cancelAnimationFrame(this._rafId);
-    this._rafId = requestAnimationFrame(() => this._tick());
+    this._rafId = requestAnimationFrame((t) => this._tick(t));
   }
 
   /** 动画帧回调 - 执行游戏逻辑和渲染 */
-  _tick() {
+  _tick(rafTime) {
     if (!this.running) return;
-    this._rafId = requestAnimationFrame(() => this._tick());
+    this._rafId = requestAnimationFrame((t) => this._tick(t));
 
     let dt = this.clock.getDelta();
     if (dt > 0.1) dt = 0.1;
+
+    // FPS counting - count frames per second
+    this._fpsFrames++;
+    const now = performance.now();
+    if (this._fpsLastTime === 0) {
+      this._fpsLastTime = now;
+    } else if (now - this._fpsLastTime >= 1000) {
+      this._fps = this._fpsFrames;
+      this._fpsFrames = 0;
+      this._fpsLastTime = now;
+    }
 
     // Update race state
     this.raceManager.update(dt);
@@ -234,9 +252,11 @@ export class Game {
       this.sun.position.set(pp.x + 50, 100, pp.z + 50);
       this.sun.target.position.set(pp.x, 0, pp.z);
       this.sun.target.updateMatrixWorld();
+      this.sun.shadow.camera.updateProjectionMatrix();
 
       // HUD
       this.hud.update(this.player, this.raceManager);
+      this.hud.updateFps(this._fps);
       this.minimap.draw(this.karts);
 
       // Particles
@@ -260,6 +280,7 @@ export class Game {
 
       // Camera still works during countdown
       this.cameraController.update(this.player, dt);
+      this.hud.updateFps(this._fps);
       this.minimap.draw(this.karts);
 
     } else if (this.raceManager.state === 'FINISHED') {
@@ -446,4 +467,5 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
+
 }

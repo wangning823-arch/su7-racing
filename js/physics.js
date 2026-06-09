@@ -64,7 +64,7 @@ export class KartPhysics {
 
     // Smooth quaternion interpolation to avoid sudden jumps
     const currentQuat = this.chassisBody.quaternion;
-    const slerpFactor = 0.3; // Lower = smoother but more lag
+    const slerpFactor = 0.5; // Higher = more responsive visual rotation
     currentQuat.slerp(targetQuat, slerpFactor, this.chassisBody.quaternion);
 
     // Engine: direct velocity control for instant response
@@ -213,7 +213,7 @@ export class KartPhysics {
 
     // Smooth quaternion interpolation
     const currentQuat = this.chassisBody.quaternion;
-    const slerpFactor = 0.4; // Slightly faster than update() for ground following
+    const slerpFactor = 0.6; // Responsive ground following
     currentQuat.slerp(targetQuat, slerpFactor, this.chassisBody.quaternion);
 
     // 物理边界与视觉护栏位置对齐
