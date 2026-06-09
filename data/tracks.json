@@ -1722,6 +1722,7 @@
       "id": "f1-albert_park",
       "name": "阿尔伯特公园",
       "difficulty": "medium",
+      "themeId": "albert_park",
       "trackWidth": 12,
       "points": [
         [
@@ -2224,12 +2225,69 @@
           0,
           -126.7
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 13421772,
+          "fogNear": 120,
+          "fogFar": 380
+        },
+        "ground": {
+          "centerColor": "#5a8a3c",
+          "edgeColor": "#4a7a2c",
+          "dotColor": "#6a9a4c",
+          "dotCount": 45,
+          "roughness": 0.88
+        },
+        "trees": {
+          "count": 300,
+          "trunkColor": 8355712,
+          "trunkHeight": 4,
+          "trunkRadiusTop": 0.1,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            5027822,
+            6138444,
+            7601699
+          ],
+          "leafGeometries": [
+            "sphere",
+            "cone"
+          ],
+          "minDistToTrack": 14
+        },
+        "lighting": {
+          "ambientColor": 16777215,
+          "ambientIntensity": 0.55,
+          "sunColor": 16777100,
+          "sunIntensity": 1.15
+        },
+        "scenery": {
+          "standColor": 2829119,
+          "roofColor": 2201331,
+          "seatColors": [
+            2201331,
+            16777215,
+            16776960
+          ],
+          "boardColor": 2829119,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 40,
+          "minHeight": 8,
+          "maxHeight": 35,
+          "minWidth": 6,
+          "maxWidth": 14,
+          "minDistToTrack": 35
+        }
+      }
     },
     {
       "id": "f1-americas",
       "name": "美洲赛道",
       "difficulty": "medium",
+      "themeId": "americas",
       "trackWidth": 12,
       "points": [
         [
@@ -2732,12 +2790,69 @@
           0,
           -75.6
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 10092543,
+          "fogNear": 100,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#6a7a3a",
+          "edgeColor": "#5a6a2a",
+          "dotColor": "#7a8a4a",
+          "dotCount": 30,
+          "roughness": 0.95
+        },
+        "trees": {
+          "count": 120,
+          "trunkColor": 6310888,
+          "trunkHeight": 2.5,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            4210752,
+            5570816,
+            6881024
+          ],
+          "leafGeometries": [
+            "cone",
+            "cone"
+          ],
+          "minDistToTrack": 18
+        },
+        "lighting": {
+          "ambientColor": 16775104,
+          "ambientIntensity": 0.55,
+          "sunColor": 16770624,
+          "sunIntensity": 1.2
+        },
+        "scenery": {
+          "standColor": 10592673,
+          "roofColor": 3342336,
+          "seatColors": [
+            3342336,
+            16777215,
+            16777215
+          ],
+          "boardColor": 3342336,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 3,
+          "minHeight": 10,
+          "maxHeight": 18,
+          "minWidth": 8,
+          "maxWidth": 14,
+          "minDistToTrack": 40
+        }
+      }
     },
     {
       "id": "f1-baku",
       "name": "巴库赛道",
       "difficulty": "hard",
+      "themeId": "baku",
       "trackWidth": 12,
       "points": [
         [
@@ -3240,12 +3355,47 @@
           0,
           65.5
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 9092010,
+          "fogNear": 100,
+          "fogFar": 320
+        },
+        "ground": {
+          "centerColor": "#8a8070",
+          "edgeColor": "#706858",
+          "dotColor": "#9a9080",
+          "dotCount": 40,
+          "roughness": 0.9
+        },
+        "trees": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 16775393,
+          "ambientIntensity": 0.5,
+          "sunColor": 16774000,
+          "sunIntensity": 1.0
+        },
+        "scenery": {
+          "standColor": 4079166,
+          "roofColor": 13158,
+          "seatColors": [
+            13158,
+            16777215,
+            2201331
+          ],
+          "boardColor": 3355443,
+          "tireColor": 2236962
+        }
+      }
     },
     {
       "id": "f1-catalunya",
       "name": "巴塞罗那",
       "difficulty": "medium",
+      "themeId": "catalunya",
       "trackWidth": 12,
       "points": [
         [
@@ -3748,13 +3898,109 @@
           0,
           85.1
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 5089023,
+          "fogNear": 120,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#c8b870",
+          "edgeColor": "#b0a058",
+          "dotColor": "#d4c880",
+          "dotCount": 25,
+          "roughness": 0.97
+        },
+        "trees": {
+          "count": 200,
+          "trunkColor": 8926538,
+          "trunkHeight": 4.5,
+          "trunkRadiusTop": 0.1,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            2703694,
+            4136910
+          ],
+          "leafGeometries": [
+            "palm",
+            "palm"
+          ],
+          "minDistToTrack": 18
+        },
+        "lighting": {
+          "ambientColor": 16775144,
+          "ambientIntensity": 0.55,
+          "sunColor": 16777110,
+          "sunIntensity": 1.3
+        },
+        "scenery": {
+          "standColor": 8421504,
+          "roofColor": 16316672,
+          "seatColors": [
+            14540032,
+            16777215,
+            16769536
+          ],
+          "boardColor": 3355443,
+          "tireColor": 2236962
+        }
+      }
     },
     {
       "id": "f1-hungaroring",
       "name": "匈格罗宁",
       "difficulty": "hard",
       "trackWidth": 12,
+      "themeId": "hungaroring",
+      "theme": {
+        "sky": {
+          "color": 7644919,
+          "fogNear": 120,
+          "fogFar": 380
+        },
+        "ground": {
+          "centerColor": "#4a8c35",
+          "edgeColor": "#3a7028",
+          "dotColor": "#5a9c45",
+          "dotCount": 45,
+          "roughness": 0.93
+        },
+        "trees": {
+          "count": 350,
+          "trunkColor": 5066062,
+          "trunkHeight": 2.8,
+          "trunkRadiusTop": 0.14,
+          "trunkRadiusBottom": 0.24,
+          "leafColors": [
+            3348992,
+            4283782,
+            5062180
+          ],
+          "leafGeometries": [
+            "sphere",
+            "cone"
+          ],
+          "minDistToTrack": 16
+        },
+        "lighting": {
+          "ambientColor": 16776179,
+          "ambientIntensity": 0.48,
+          "sunColor": 16774064,
+          "sunIntensity": 1.15
+        },
+        "scenery": {
+          "standColor": 5592405,
+          "roofColor": 14540253,
+          "seatColors": [
+            14540253,
+            3368499,
+            16777215
+          ],
+          "boardColor": 2105376,
+          "tireColor": 2236962
+        }
+      },
       "points": [
         [
           -69.5,
@@ -4262,6 +4508,7 @@
       "id": "f1-interlagos",
       "name": "因特拉格斯",
       "difficulty": "medium",
+      "themeId": "interlagos",
       "trackWidth": 12,
       "points": [
         [
@@ -4764,12 +5011,68 @@
           0,
           -104.1
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 8771991,
+          "fogNear": 100,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#5a6a3a",
+          "edgeColor": "#4a5a2a",
+          "dotColor": "#6a7a4a",
+          "dotCount": 35,
+          "roughness": 0.92
+        },
+        "trees": {
+          "count": 120,
+          "trunkColor": 7299318,
+          "trunkHeight": 3.0,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.2,
+          "leafColors": [
+            3407616,
+            4480064
+          ],
+          "leafGeometries": [
+            "palm",
+            "sphere"
+          ],
+          "minDistToTrack": 20
+        },
+        "lighting": {
+          "ambientColor": 16775155,
+          "ambientIntensity": 0.5,
+          "sunColor": 16777011,
+          "sunIntensity": 1.1
+        },
+        "scenery": {
+          "standColor": 5592405,
+          "roofColor": 3355443,
+          "seatColors": [
+            16776960,
+            3066993,
+            16777215
+          ],
+          "boardColor": 3355443,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 60,
+          "minHeight": 8,
+          "maxHeight": 28,
+          "minWidth": 6,
+          "maxWidth": 14,
+          "minDistToTrack": 22
+        }
+      }
     },
     {
       "id": "f1-jeddah",
       "name": "吉达赛道",
       "difficulty": "hard",
+      "themeId": "jeddah",
       "trackWidth": 12,
       "points": [
         [
@@ -5272,12 +5575,55 @@
           0,
           -217
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 1052688,
+          "fogNear": 80,
+          "fogFar": 260
+        },
+        "ground": {
+          "centerColor": "#2a2a35",
+          "edgeColor": "#1a1a28",
+          "dotColor": "#3a3a4a",
+          "dotCount": 10,
+          "roughness": 0.85
+        },
+        "trees": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 4473924,
+          "ambientIntensity": 0.35,
+          "sunColor": 8947967,
+          "sunIntensity": 0.5
+        },
+        "scenery": {
+          "standColor": 2829119,
+          "roofColor": 16384,
+          "seatColors": [
+            16384,
+            16777215,
+            16384
+          ],
+          "boardColor": 13158,
+          "tireColor": 1118481
+        },
+        "buildings": {
+          "count": 0,
+          "minHeight": 10,
+          "maxHeight": 30,
+          "minWidth": 6,
+          "maxWidth": 14,
+          "minDistToTrack": 22
+        }
+      }
     },
     {
       "id": "f1-losail",
       "name": "卡塔尔",
       "difficulty": "medium",
+      "themeId": "losail",
       "trackWidth": 12,
       "points": [
         [
@@ -5780,12 +6126,60 @@
           0,
           -156.5
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 1315860,
+          "fogNear": 80,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#c8a870",
+          "edgeColor": "#a08050",
+          "dotColor": "#b89860",
+          "dotCount": 15,
+          "roughness": 0.98
+        },
+        "trees": {
+          "count": 60,
+          "trunkColor": 5929514,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            2236962,
+            3289801
+          ],
+          "leafGeometries": [
+            "palm",
+            "palm"
+          ],
+          "minDistToTrack": 16
+        },
+        "lighting": {
+          "ambientColor": 13158600,
+          "ambientIntensity": 0.35,
+          "sunColor": 16769200,
+          "sunIntensity": 0.4
+        },
+        "scenery": {
+          "standColor": 2894892,
+          "roofColor": 10526880,
+          "seatColors": [
+            10526880,
+            2894892,
+            16777215
+          ],
+          "boardColor": 2236962,
+          "tireColor": 1118481
+        }
+      }
     },
     {
       "id": "f1-marina_bay",
       "name": "新加坡赛道",
       "difficulty": "hard",
+      "themeId": "marina_bay",
       "trackWidth": 12,
       "points": [
         [
@@ -6288,12 +6682,50 @@
           0,
           -14.8
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 1052688,
+          "fogNear": 60,
+          "fogFar": 300
+        },
+        "ground": {
+          "centerColor": "#2a2a2a",
+          "edgeColor": "#1a1a1a",
+          "dotColor": "#333333",
+          "dotCount": 10,
+          "roughness": 0.92
+        },
+        "trees": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 4473924,
+          "ambientIntensity": 0.35,
+          "sunColor": 6655872,
+          "sunIntensity": 0.5
+        },
+        "scenery": {
+          "standColor": 1776411,
+          "roofColor": 2899536,
+          "seatColors": [
+            3355443,
+            16766720,
+            16777215
+          ],
+          "boardColor": 13158,
+          "tireColor": 1118481
+        },
+        "buildings": {
+          "count": 0
+        }
+      }
     },
     {
       "id": "f1-miami",
       "name": "迈阿密",
       "difficulty": "medium",
+      "themeId": "miami",
       "trackWidth": 12,
       "points": [
         [
@@ -6796,7 +7228,62 @@
           0,
           66.9
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 8900331,
+          "fogNear": 120,
+          "fogFar": 380
+        },
+        "ground": {
+          "centerColor": "#5a8a3c",
+          "edgeColor": "#4a7a2c",
+          "dotColor": "#6a9a4c",
+          "dotCount": 35,
+          "roughness": 0.88
+        },
+        "trees": {
+          "count": 100,
+          "trunkColor": 9136450,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.1,
+          "trunkRadiusBottom": 0.2,
+          "leafColors": [
+            2263842,
+            3329330
+          ],
+          "leafGeometries": [
+            "palm",
+            "palm"
+          ],
+          "minDistToTrack": 16
+        },
+        "lighting": {
+          "ambientColor": 16777215,
+          "ambientIntensity": 0.55,
+          "sunColor": 16777100,
+          "sunIntensity": 1.2
+        },
+        "scenery": {
+          "standColor": 2829119,
+          "roofColor": 2201331,
+          "seatColors": [
+            2201331,
+            16777215,
+            16776960
+          ],
+          "boardColor": 2829119,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 4,
+          "minHeight": 8,
+          "maxHeight": 15,
+          "minWidth": 10,
+          "maxWidth": 16,
+          "minDistToTrack": 35
+        }
+      }
     },
     {
       "id": "f1-monaco",
@@ -7304,7 +7791,63 @@
           0,
           -111
         ]
-      ]
+      ],
+      "themeId": "monaco",
+      "theme": {
+        "sky": {
+          "color": 10200064,
+          "fogNear": 100,
+          "fogFar": 320
+        },
+        "ground": {
+          "centerColor": "#5a5a5a",
+          "edgeColor": "#4a4a4a",
+          "dotColor": "#666666",
+          "dotCount": 70,
+          "roughness": 0.88
+        },
+        "trees": {
+          "count": 60,
+          "trunkColor": 7162922,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            2263842,
+            3329330
+          ],
+          "leafGeometries": [
+            "palm",
+            "palm"
+          ],
+          "minDistToTrack": 18
+        },
+        "lighting": {
+          "ambientColor": 15597568,
+          "ambientIntensity": 0.65,
+          "sunColor": 16775088,
+          "sunIntensity": 0.9
+        },
+        "scenery": {
+          "standColor": 4210752,
+          "roofColor": 2236962,
+          "seatColors": [
+            16746496,
+            3355443,
+            16777215
+          ],
+          "boardColor": 13158,
+          "tireColor": 1118481
+        },
+        "buildings": {
+          "count": 120,
+          "minHeight": 10,
+          "maxHeight": 35,
+          "minWidth": 5,
+          "maxWidth": 12,
+          "minDistToTrack": 8
+        }
+      }
     },
     {
       "id": "f1-monza",
@@ -7812,11 +8355,64 @@
           0,
           -160.8
         ]
-      ]
+      ],
+      "themeId": "monza",
+      "theme": {
+        "sky": {
+          "color": 13487553,
+          "fogNear": 150,
+          "fogFar": 400
+        },
+        "ground": {
+          "centerColor": "#4a7a30",
+          "edgeColor": "#356020",
+          "dotColor": "#5a8a40",
+          "dotCount": 55,
+          "roughness": 0.92
+        },
+        "trees": {
+          "count": 450,
+          "trunkColor": 5847826,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.18,
+          "trunkRadiusBottom": 0.35,
+          "leafColors": [
+            2496584,
+            3681608,
+            5032020
+          ],
+          "leafGeometries": [
+            "sphere",
+            "sphere"
+          ],
+          "minDistToTrack": 16
+        },
+        "buildings": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 16768990,
+          "ambientIntensity": 0.55,
+          "sunColor": 16772744,
+          "sunIntensity": 1.2
+        },
+        "scenery": {
+          "standColor": 14210800,
+          "roofColor": 3289650,
+          "seatColors": [
+            16711680,
+            16777215,
+            14540032
+          ],
+          "boardColor": 2236962,
+          "tireColor": 2236962
+        }
+      }
     },
     {
       "id": "f1-red_bull_ring",
       "name": "红牛环",
+      "themeId": "red_bull_ring",
       "difficulty": "easy",
       "trackWidth": 12,
       "points": [
@@ -8320,12 +8916,69 @@
           0,
           -129
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 13421772,
+          "fogNear": 120,
+          "fogFar": 400
+        },
+        "ground": {
+          "centerColor": "#4a8a32",
+          "edgeColor": "#3a7a22",
+          "dotColor": "#5a9a42",
+          "dotCount": 45,
+          "roughness": 0.9
+        },
+        "trees": {
+          "count": 350,
+          "trunkColor": 4669416,
+          "trunkHeight": 4,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.25,
+          "leafColors": [
+            2105376,
+            2954240,
+            3675392
+          ],
+          "leafGeometries": [
+            "cone",
+            "cone"
+          ],
+          "minDistToTrack": 16
+        },
+        "lighting": {
+          "ambientColor": 16777215,
+          "ambientIntensity": 0.55,
+          "sunColor": 16777100,
+          "sunIntensity": 1.15
+        },
+        "scenery": {
+          "standColor": 1710618,
+          "roofColor": 2003199,
+          "seatColors": [
+            2003199,
+            16766720,
+            16777215
+          ],
+          "boardColor": 1710618,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 3,
+          "minHeight": 8,
+          "maxHeight": 14,
+          "minWidth": 10,
+          "maxWidth": 18,
+          "minDistToTrack": 35
+        }
+      }
     },
     {
       "id": "f1-rodriguez",
       "name": "墨西哥城",
       "difficulty": "medium",
+      "themeId": "rodriguez",
       "trackWidth": 12,
       "points": [
         [
@@ -8828,7 +9481,55 @@
           0,
           138.8
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 13421772,
+          "fogNear": 100,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#8a7a5a",
+          "edgeColor": "#7a6a4a",
+          "dotColor": "#9a8a6a",
+          "dotCount": 30,
+          "roughness": 0.95
+        },
+        "trees": {
+          "count": 40,
+          "trunkColor": 6310888,
+          "trunkHeight": 2.5,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            4210752,
+            5570816,
+            6881024
+          ],
+          "leafGeometries": [
+            "cone",
+            "sphere"
+          ],
+          "minDistToTrack": 20
+        },
+        "lighting": {
+          "ambientColor": 16777215,
+          "ambientIntensity": 0.6,
+          "sunColor": 16775680,
+          "sunIntensity": 1.3
+        },
+        "scenery": {
+          "standColor": 10066329,
+          "roofColor": 8388608,
+          "seatColors": [
+            16711680,
+            16777215,
+            65280
+          ],
+          "boardColor": 4210752,
+          "tireColor": 2236962
+        }
+      }
     },
     {
       "id": "f1-shanghai",
@@ -9336,13 +10037,57 @@
           0,
           -117.8
         ]
-      ]
+      ],
+      "themeId": "shanghai",
+      "theme": {
+        "sky": {
+          "color": 13158600,
+          "fogNear": 120,
+          "fogFar": 350
+        },
+        "ground": {
+          "centerColor": "#4a4a4a",
+          "edgeColor": "#3a3a3a",
+          "dotColor": "#555555",
+          "dotCount": 80,
+          "roughness": 0.85
+        },
+        "trees": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 14079702,
+          "ambientIntensity": 0.6,
+          "sunColor": 16777215,
+          "sunIntensity": 0.85
+        },
+        "scenery": {
+          "standColor": 3355443,
+          "roofColor": 2236962,
+          "seatColors": [
+            16711680,
+            255,
+            16777215
+          ],
+          "boardColor": 0,
+          "tireColor": 1118481
+        },
+        "buildings": {
+          "count": 0,
+          "minHeight": 5,
+          "maxHeight": 12,
+          "minWidth": 15,
+          "maxWidth": 30,
+          "minDistToTrack": 60
+        }
+      }
     },
     {
       "id": "f1-silverstone",
       "name": "银石赛道",
       "difficulty": "medium",
       "trackWidth": 12,
+      "themeId": "silverstone",
       "points": [
         [
           -152.9,
@@ -9844,13 +10589,126 @@
           0,
           -138.6
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 13421772,
+          "fogNear": 90,
+          "fogFar": 280
+        },
+        "ground": {
+          "centerColor": "#4a7a32",
+          "edgeColor": "#3a6228",
+          "dotColor": "#558840",
+          "dotCount": 35,
+          "roughness": 0.92
+        },
+        "trees": {
+          "count": 120,
+          "trunkColor": 6242770,
+          "trunkHeight": 3,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            3675394,
+            4473941,
+            5025616
+          ],
+          "leafGeometries": [
+            "sphere",
+            "cone"
+          ],
+          "minDistToTrack": 22
+        },
+        "lighting": {
+          "ambientColor": 15658734,
+          "ambientIntensity": 0.55,
+          "sunColor": 14540253,
+          "sunIntensity": 0.8
+        },
+        "scenery": {
+          "standColor": 3552866,
+          "roofColor": 10526880,
+          "seatColors": [
+            16777215,
+            3342336,
+            16744448
+          ],
+          "boardColor": 4210752,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 4,
+          "minHeight": 4,
+          "maxHeight": 8,
+          "minWidth": 8,
+          "maxWidth": 14,
+          "minDistToTrack": 40
+        }
+      }
     },
     {
       "id": "f1-spa",
       "name": "斯帕赛道",
       "difficulty": "hard",
       "trackWidth": 12,
+      "themeId": "spa",
+      "theme": {
+        "sky": {
+          "color": 7368811,
+          "fogNear": 60,
+          "fogFar": 220
+        },
+        "ground": {
+          "centerColor": "#2d5a1e",
+          "edgeColor": "#1a3a12",
+          "dotColor": "#3d7a28",
+          "dotCount": 50,
+          "roughness": 0.95
+        },
+        "trees": {
+          "count": 800,
+          "trunkColor": 3809296,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            1793568,
+            3046706,
+            2236962
+          ],
+          "leafGeometries": [
+            "pine",
+            "pine"
+          ],
+          "minDistToTrack": 14
+        },
+        "buildings": {
+          "count": 4,
+          "minHeight": 8,
+          "maxHeight": 14,
+          "minWidth": 10,
+          "maxWidth": 16,
+          "minDistToTrack": 30
+        },
+        "lighting": {
+          "ambientColor": 12566463,
+          "ambientIntensity": 0.35,
+          "sunColor": 15658734,
+          "sunIntensity": 0.8
+        },
+        "scenery": {
+          "standColor": 5592422,
+          "roofColor": 2899536,
+          "seatColors": [
+            16750848,
+            2899536,
+            16777215
+          ],
+          "boardColor": 2236962,
+          "tireColor": 1118481
+        }
+      },
       "points": [
         [
           -95.7,
@@ -10359,506 +11217,562 @@
       "name": "铃鹿赛道",
       "difficulty": "hard",
       "trackWidth": 12,
+      "themeId": "suzuka",
+      "theme": {
+        "sky": {
+          "color": 10000500,
+          "fogNear": 100,
+          "fogFar": 320
+        },
+        "ground": {
+          "centerColor": "#3d7a28",
+          "edgeColor": "#2d5a1e",
+          "dotColor": "#4a8c35",
+          "dotCount": 45,
+          "roughness": 0.93
+        },
+        "trees": {
+          "count": 250,
+          "trunkColor": 4605514,
+          "trunkHeight": 3,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            2263842,
+            2560000
+          ],
+          "leafGeometries": [
+            "pine",
+            "cone"
+          ],
+          "minDistToTrack": 18
+        },
+        "lighting": {
+          "ambientColor": 16777215,
+          "ambientIntensity": 0.5,
+          "sunColor": 16777215,
+          "sunIntensity": 1.1
+        },
+        "scenery": {
+          "standColor": 13158,
+          "roofColor": 16777215,
+          "seatColors": [
+            16711680,
+            255,
+            16777215
+          ],
+          "boardColor": 16777215,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 0,
+          "minHeight": 6,
+          "maxHeight": 10,
+          "minWidth": 10,
+          "maxWidth": 18,
+          "minDistToTrack": 25
+        }
+      },
       "points": [
         [
-          -240.1,
+          170,
           0,
-          203.5
-        ],
-        [
-          -223.7,
-          0,
-          203.5
-        ],
-        [
-          -207.2,
-          0,
-          203.5
-        ],
-        [
-          -190.8,
-          0,
-          203.5
-        ],
-        [
-          -174.3,
-          0,
-          203.5
-        ],
-        [
-          -157.9,
-          0,
-          203.5
-        ],
-        [
-          -141.5,
-          0,
-          203.5
-        ],
-        [
-          -125,
-          0,
-          203.5
-        ],
-        [
-          -108.6,
-          0,
-          203.5
-        ],
-        [
-          -92.2,
-          0,
-          203.5
-        ],
-        [
-          -75.7,
-          0,
-          203.5
-        ],
-        [
-          -59.3,
-          0,
-          203.5
-        ],
-        [
-          -42.8,
-          0,
-          203.5
-        ],
-        [
-          -26.4,
-          0,
-          203.5
-        ],
-        [
-          -10,
-          0,
-          203.5
-        ],
-        [
-          6.5,
-          0,
-          203.5
-        ],
-        [
-          22.9,
-          0,
-          203.5
-        ],
-        [
-          39.3,
-          0,
-          203.5
-        ],
-        [
-          55.8,
-          0,
-          203.5
-        ],
-        [
-          72.2,
-          0,
-          203.5
-        ],
-        [
-          88.7,
-          0,
-          203.5
-        ],
-        [
-          105.1,
-          0,
-          203.5
-        ],
-        [
-          121.5,
-          0,
-          203.5
-        ],
-        [
-          138,
-          0,
-          203.5
-        ],
-        [
-          154.4,
-          0,
-          203.5
+          -80
         ],
         [
           169.7,
           0,
-          198.6
+          -70.6
         ],
         [
-          184.4,
+          168.7,
           0,
-          191.3
+          -61.2
         ],
         [
-          199.1,
+          167,
           0,
-          183.9
+          -51.9
         ],
         [
-          213.8,
+          164.7,
           0,
-          176.6
+          -42.7
         ],
         [
-          225.9,
+          161.7,
           0,
-          166
+          -33.6
         ],
         [
-          236.2,
+          158.1,
           0,
-          153.2
+          -24.8
         ],
         [
-          246.4,
+          153.8,
           0,
-          140.3
+          -16.1
         ],
         [
-          256.7,
+          149,
           0,
-          127.5
+          -7.7
         ],
         [
-          263.5,
-          0,
-          112.8
-        ],
-        [
-          268.7,
-          0,
-          97.2
-        ],
-        [
-          273.9,
-          0,
-          81.6
-        ],
-        [
-          279.1,
-          0,
-          66
-        ],
-        [
-          279.9,
-          0,
-          49.7
-        ],
-        [
-          279.9,
-          0,
-          33.2
-        ],
-        [
-          279.9,
-          0,
-          16.8
-        ],
-        [
-          279.4,
+          143.5,
           0,
           0.4
         ],
         [
-          276.7,
+          137.5,
           0,
-          -15.8
+          8.2
         ],
         [
-          274,
+          131,
           0,
-          -32
+          15.6
         ],
         [
-          271.3,
+          123.9,
           0,
-          -48.2
+          22.7
         ],
         [
-          267.3,
+          116.4,
           0,
-          -64.2
+          29.3
         ],
         [
-          262.2,
+          108.4,
           0,
-          -79.7
+          35.6
         ],
         [
-          257,
+          99.9,
           0,
-          -95.3
+          41.4
         ],
         [
-          251.8,
+          91.1,
           0,
-          -110.9
+          46.6
         ],
         [
-          242.4,
+          81.9,
           0,
-          -124
+          51.4
         ],
         [
-          230.8,
+          72.4,
           0,
-          -135.6
+          55.7
         ],
         [
-          219.2,
+          62.6,
           0,
-          -147.2
+          59.5
         ],
         [
-          206.8,
+          52.5,
           0,
-          -157.7
+          62.7
         ],
         [
-          191.6,
+          42.3,
           0,
-          -163.8
+          65.3
         ],
         [
-          176.3,
+          31.9,
           0,
-          -169.9
+          67.3
         ],
         [
-          161,
+          21.3,
           0,
-          -176
+          68.8
         ],
         [
-          145,
+          10.7,
           0,
-          -179.5
+          69.7
         ],
         [
-          128.9,
+          0,
+          0,
+          70
+        ],
+        [
+          -10.7,
+          0,
+          69.7
+        ],
+        [
+          -18.5,
+          0,
+          69.8
+        ],
+        [
+          -23.2,
+          0,
+          68
+        ],
+        [
+          -30.5,
+          0,
+          63.9
+        ],
+        [
+          -44.7,
+          0,
+          58.9
+        ],
+        [
+          -64.9,
+          0,
+          54.7
+        ],
+        [
+          -85.1,
+          0,
+          52.2
+        ],
+        [
+          -99.1,
+          0,
+          50.8
+        ],
+        [
+          -104.6,
+          0,
+          48.8
+        ],
+        [
+          -104.8,
+          0,
+          44.6
+        ],
+        [
+          -106,
+          0,
+          38
+        ],
+        [
+          -112.7,
+          0,
+          30.1
+        ],
+        [
+          -123.9,
+          0,
+          22.7
+        ],
+        [
+          -131,
+          0,
+          15.6
+        ],
+        [
+          -137.5,
+          0,
+          8.2
+        ],
+        [
+          -143.5,
+          0,
+          0.4
+        ],
+        [
+          -154.5,
+          0,
+          -18.9
+        ],
+        [
+          -164.7,
+          0,
+          -37.8
+        ],
+        [
+          -173.6,
+          0,
+          -56
+        ],
+        [
+          -181.2,
+          0,
+          -72.7
+        ],
+        [
+          -187.2,
+          0,
+          -87.7
+        ],
+        [
+          -191.4,
+          0,
+          -100.6
+        ],
+        [
+          -193.7,
+          0,
+          -111.2
+        ],
+        [
+          -194,
+          0,
+          -119.3
+        ],
+        [
+          -192.5,
+          0,
+          -125
+        ],
+        [
+          -189.2,
+          0,
+          -128.5
+        ],
+        [
+          -184.2,
+          0,
+          -130
+        ],
+        [
+          -177.8,
+          0,
+          -129.8
+        ],
+        [
+          -170.2,
+          0,
+          -128.4
+        ],
+        [
+          -161.7,
+          0,
+          -126.4
+        ],
+        [
+          -150.3,
+          0,
+          -135.2
+        ],
+        [
+          -138.5,
+          0,
+          -143.9
+        ],
+        [
+          -126.7,
+          0,
+          -152.3
+        ],
+        [
+          -115.3,
+          0,
+          -160.4
+        ],
+        [
+          -104.3,
+          0,
+          -168.2
+        ],
+        [
+          -94,
+          0,
+          -175.6
+        ],
+        [
+          -84.7,
           0,
           -182.7
         ],
         [
-          112.7,
+          -76.4,
           0,
-          -185.9
+          -189.3
         ],
         [
-          96.6,
-          0,
-          -189.2
-        ],
-        [
-          80.5,
-          0,
-          -192.4
-        ],
-        [
-          64.4,
+          -69.1,
           0,
           -195.6
         ],
         [
-          50.4,
+          -63,
           0,
-          -203.6
+          -201.4
         ],
         [
-          37.3,
+          -57.8,
           0,
-          -213.5
+          -206.6
         ],
         [
-          24.1,
+          -53.6,
           0,
-          -223.3
+          -211.4
         ],
         [
-          8.9,
+          -50.2,
           0,
-          -228.7
+          -215.7
         ],
         [
-          -7.2,
+          -47.3,
           0,
-          -231.9
+          -219.5
         ],
         [
-          -23.3,
+          -44.7,
           0,
-          -235.1
+          -222.7
         ],
         [
-          -39.5,
+          -30.6,
           0,
-          -234.9
+          -218.8
         ],
         [
-          -55.7,
+          -9.4,
           0,
-          -232.2
+          -214.8
         ],
         [
-          -71.9,
+          10.5,
           0,
-          -229.5
+          -211.1
         ],
         [
-          -88.1,
+          28.3,
           0,
-          -226.8
+          -208.1
         ],
         [
-          -102.5,
+          43.5,
           0,
-          -219.1
+          -205.9
         ],
         [
-          -116.6,
+          55.7,
           0,
-          -210.6
+          -204.7
         ],
         [
-          -130.7,
+          64.8,
           0,
-          -202.2
+          -204.7
         ],
         [
-          -143.9,
+          70.8,
           0,
-          -192.7
+          -205.7
         ],
         [
-          -155.6,
+          74.1,
           0,
-          -181
+          -207.6
         ],
         [
-          -167.2,
+          75,
           0,
-          -169.4
+          -210.2
         ],
         [
-          -178.8,
+          74.2,
           0,
-          -157.8
+          -213
         ],
         [
-          -187.6,
+          75.7,
           0,
-          -144
+          -215.7
         ],
         [
-          -196.1,
+          93.4,
           0,
-          -129.9
+          -211.4
         ],
         [
-          -204.5,
+          110.8,
           0,
-          -115.8
+          -206.6
         ],
         [
-          -211.9,
+          123,
           0,
-          -101.2
+          -201.4
         ],
         [
-          -217.1,
+          127,
           0,
-          -85.6
+          -195.6
         ],
         [
-          -222.3,
+          123.5,
           0,
-          -70
+          -189.3
         ],
         [
-          -227.5,
+          116.8,
           0,
-          -54.4
+          -182.7
         ],
         [
-          -231.4,
+          112.4,
           0,
-          -38.5
+          -175.6
         ],
         [
-          -234.1,
+          114.4,
           0,
-          -22.3
+          -168.2
         ],
         [
-          -236.8,
+          123.8,
           0,
-          -6.1
+          -160.4
         ],
         [
-          -239.5,
+          137.5,
           0,
-          10.1
+          -152.3
         ],
         [
-          -242.2,
+          150.5,
           0,
-          26.4
+          -143.9
         ],
         [
-          -244.9,
+          158.1,
           0,
-          42.6
+          -135.2
         ],
         [
-          -247.6,
+          161.7,
           0,
-          58.8
+          -126.4
         ],
         [
-          -250.3,
+          164.7,
           0,
-          75
+          -117.3
         ],
         [
-          -251.9,
+          167,
           0,
-          91.4
+          -108.1
         ],
         [
-          -253.5,
+          168.7,
           0,
-          107.7
+          -98.8
         ],
         [
-          -255.2,
+          170,
           0,
-          124.1
-        ],
-        [
-          -255.3,
-          0,
-          140.4
-        ],
-        [
-          -253.3,
-          0,
-          156.7
-        ],
-        [
-          -251.4,
-          0,
-          173.1
-        ],
-        [
-          -247.5,
-          0,
-          188.8
+          -80
         ]
       ]
     },
@@ -11368,12 +12282,51 @@
           0,
           -207.2
         ]
-      ]
+      ],
+      "themeId": "vegas",
+      "theme": {
+        "sky": {
+          "color": 13158,
+          "fogNear": 150,
+          "fogFar": 400
+        },
+        "ground": {
+          "centerColor": "#2a2a30",
+          "edgeColor": "#1a1a22",
+          "dotColor": "#3a3a44",
+          "dotCount": 60,
+          "roughness": 0.85
+        },
+        "trees": {
+          "count": 0
+        },
+        "lighting": {
+          "ambientColor": 4473924,
+          "ambientIntensity": 0.3,
+          "sunColor": 6579557,
+          "sunIntensity": 0.4
+        },
+        "scenery": {
+          "standColor": 2105376,
+          "roofColor": 16744448,
+          "seatColors": [
+            16744448,
+            16776960,
+            16711935
+          ],
+          "boardColor": 2105376,
+          "tireColor": 1118481
+        },
+        "buildings": {
+          "count": 0
+        }
+      }
     },
     {
       "id": "f1-villeneuve",
       "name": "伊莫拉",
       "difficulty": "medium",
+      "themeId": "villeneuve",
       "trackWidth": 12,
       "points": [
         [
@@ -11876,12 +12829,69 @@
           0,
           -175
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 13495087,
+          "fogNear": 120,
+          "fogFar": 400
+        },
+        "ground": {
+          "centerColor": "#5a8a3c",
+          "edgeColor": "#4a7a2c",
+          "dotColor": "#6a9a4c",
+          "dotCount": 40,
+          "roughness": 0.92
+        },
+        "trees": {
+          "count": 350,
+          "trunkColor": 5913114,
+          "trunkHeight": 3.0,
+          "trunkRadiusTop": 0.12,
+          "trunkRadiusBottom": 0.22,
+          "leafColors": [
+            3046706,
+            3706428,
+            1793568
+          ],
+          "leafGeometries": [
+            "cone",
+            "sphere"
+          ],
+          "minDistToTrack": 16
+        },
+        "lighting": {
+          "ambientColor": 16777184,
+          "ambientIntensity": 0.55,
+          "sunColor": 16776960,
+          "sunIntensity": 1.2
+        },
+        "scenery": {
+          "standColor": 9136404,
+          "roofColor": 13378048,
+          "seatColors": [
+            13378048,
+            16777215,
+            2263842
+          ],
+          "boardColor": 3824170,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 12,
+          "minHeight": 6,
+          "maxHeight": 14,
+          "minWidth": 8,
+          "maxWidth": 16,
+          "minDistToTrack": 35
+        }
+      }
     },
     {
       "id": "f1-yas_marina",
       "name": "亚斯码头",
       "difficulty": "hard",
+      "themeId": "yas_marina",
       "trackWidth": 12,
       "points": [
         [
@@ -12384,12 +13394,68 @@
           0,
           -12.2
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 14643456,
+          "fogNear": 100,
+          "fogFar": 300
+        },
+        "ground": {
+          "centerColor": "#c8b89a",
+          "edgeColor": "#b0a080",
+          "dotColor": "#d0c0a0",
+          "dotCount": 20,
+          "roughness": 0.95
+        },
+        "trees": {
+          "count": 30,
+          "trunkColor": 7232030,
+          "trunkHeight": 3.5,
+          "trunkRadiusTop": 0.1,
+          "trunkRadiusBottom": 0.18,
+          "leafColors": [
+            2263842,
+            3329330
+          ],
+          "leafGeometries": [
+            "palm",
+            "palm"
+          ],
+          "minDistToTrack": 22
+        },
+        "lighting": {
+          "ambientColor": 16760320,
+          "ambientIntensity": 0.5,
+          "sunColor": 16748032,
+          "sunIntensity": 1.3
+        },
+        "scenery": {
+          "standColor": 3426654,
+          "roofColor": 4445929,
+          "seatColors": [
+            4445929,
+            16777215,
+            2829119
+          ],
+          "boardColor": 2899536,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 6,
+          "minHeight": 14,
+          "maxHeight": 30,
+          "minWidth": 8,
+          "maxWidth": 16,
+          "minDistToTrack": 40
+        }
+      }
     },
     {
       "id": "f1-zandvoort",
       "name": "赞德沃特",
       "difficulty": "medium",
+      "themeId": "zandvoort",
       "trackWidth": 12,
       "points": [
         [
@@ -12892,7 +13958,62 @@
           0,
           63.3
         ]
-      ]
+      ],
+      "theme": {
+        "sky": {
+          "color": 11842816,
+          "fogNear": 90,
+          "fogFar": 280
+        },
+        "ground": {
+          "centerColor": "#d4c8a0",
+          "edgeColor": "#c4b888",
+          "dotColor": "#ddd0a8",
+          "dotCount": 25,
+          "roughness": 0.98
+        },
+        "trees": {
+          "count": 30,
+          "trunkColor": 6244666,
+          "trunkHeight": 1.8,
+          "trunkRadiusTop": 0.08,
+          "trunkRadiusBottom": 0.15,
+          "leafColors": [
+            4281010,
+            5528681
+          ],
+          "leafGeometries": [
+            "cone",
+            "cone"
+          ],
+          "minDistToTrack": 18
+        },
+        "lighting": {
+          "ambientColor": 16775880,
+          "ambientIntensity": 0.55,
+          "sunColor": 16772744,
+          "sunIntensity": 1.15
+        },
+        "scenery": {
+          "standColor": 3426654,
+          "roofColor": 16741376,
+          "seatColors": [
+            16741376,
+            255,
+            16777215
+          ],
+          "boardColor": 2899536,
+          "tireColor": 2236962
+        },
+        "buildings": {
+          "count": 5,
+          "minHeight": 4,
+          "maxHeight": 8,
+          "minWidth": 6,
+          "maxWidth": 12,
+          "minDistToTrack": 40
+        }
+      }
     }
   ]
 }

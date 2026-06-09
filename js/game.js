@@ -134,15 +134,30 @@ export class Game {
     }
 
     this._finishedNotified = false;
+    // 立即隐藏完赛提示（不使用淡出动画）
+    const finishedEl = document.getElementById('hud-finished');
+    finishedEl.style.display = 'none';
+    finishedEl.style.opacity = '0';
     this.raceManager.startCountdown();
     this.running = true;
     this.clock.start();
     this.animate();
   }
 
+  /**
+   * 启动动画循环
+   * 使用单独的animate方法启动，_tick方法执行实际逻辑
+   * 这样可以安全地取消旧的RAF回调，避免重复循环
+   */
   animate() {
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+    this._rafId = requestAnimationFrame(() => this._tick());
+  }
+
+  /** 动画帧回调 - 执行游戏逻辑和渲染 */
+  _tick() {
     if (!this.running) return;
-    requestAnimationFrame(() => this.animate());
+    this._rafId = requestAnimationFrame(() => this._tick());
 
     let dt = this.clock.getDelta();
     if (dt > 0.1) dt = 0.1;
