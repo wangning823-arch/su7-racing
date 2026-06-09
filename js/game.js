@@ -180,7 +180,7 @@ export class Game {
         const rawInput = this.input.getInput();
         playerInput = { ...rawInput, steer: -rawInput.steer };
       }
-      const aiInputs = this.aiControllers.map((ai, i) => ai.getInput(this.karts[i + 1]));
+      const aiInputs = this.aiControllers.map((ai, i) => ai.getInput(this.karts[i + 1], this.karts));
 
       // Physics loop: apply forces then step each substep
       this.accumulator += dt;

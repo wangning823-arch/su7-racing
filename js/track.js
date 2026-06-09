@@ -610,6 +610,9 @@ export class TrackBuilder {
     if (id === 'albert_park') {
       this._buildAlbertParkScenery();
     }
+    if (id === 'shanghai') {
+      this._buildShanghaiScenery();
+    }
   }
 
   _buildLighthouse() {
@@ -862,33 +865,38 @@ export class TrackBuilder {
 
     const count = b.count ?? 80;
     const hw = (this._trackWidth || CONFIG.trackWidth) / 2;
-    // Minimum clearance from building edge to track edge
-    const maxHalfSize = ((b.maxWidth ?? 14) / 2) + 2;
-    const baseMinDist = b.minDistToTrack ?? 10;
-    // Hard minimum: building center must be at least this far from spline center
-    // This prevents buildings from EVER appearing on the track
-    const hardMinDist = hw + 6; // 6 units minimum safety margin from track edge
+    const configMinDist = b.minDistToTrack ?? 30;
 
     const buildingColors = [0x555566, 0x4a4a5a, 0x606070, 0x505060, 0x484858, 0x5a5a6a];
 
     const b2 = this.trackBounds;
-    const buildRangeX = b2 ? Math.max(300, b2.width + 120) / 2 : 150;
-    const buildRangeZ = b2 ? Math.max(300, b2.depth + 120) / 2 : 150;
-    // Minimum distance from building center to spline center
-    const requiredDist = Math.max(baseMinDist + hw + maxHalfSize, hardMinDist);
-    for (let i = 0; i < count; i++) {
-      let x, z;
-      let attempts = 0;
-      do {
-        x = (Math.random() - 0.5) * buildRangeX * 2;
-        z = (Math.random() - 0.5) * buildRangeZ * 2;
-        attempts++;
-      } while (this.distToTrack(x, z) < requiredDist && attempts < 100);
-      if (attempts >= 100) continue;
+    const buildRangeX = b2 ? Math.max(400, b2.width + 200) / 2 : 200;
+    const buildRangeZ = b2 ? Math.max(400, b2.depth + 200) / 2 : 200;
 
+    for (let i = 0; i < count; i++) {
       const w = (b.minWidth ?? 6) + Math.random() * ((b.maxWidth ?? 14) - (b.minWidth ?? 6));
       const d = (b.minWidth ?? 6) + Math.random() * ((b.maxWidth ?? 14) - (b.minWidth ?? 6));
       const h = (b.minHeight ?? 8) + Math.random() * ((b.maxHeight ?? 30) - (b.minHeight ?? 8));
+      const actualHalfSize = Math.max(w, d) / 2;
+
+      // 所需最小距离：赛道半宽 + 建筑物半宽 + 配置的最小距离
+      const requiredDist = hw + actualHalfSize + configMinDist;
+
+      let x, z;
+      let attempts = 0;
+      let valid = false;
+      while (attempts < 300) {
+        x = (Math.random() - 0.5) * buildRangeX * 2;
+        z = (Math.random() - 0.5) * buildRangeZ * 2;
+        attempts++;
+
+        const dist = this.distToTrack(x, z);
+        if (dist >= requiredDist) {
+          valid = true;
+          break;
+        }
+      }
+      if (!valid) continue;
 
       const geo = new THREE.BoxGeometry(w, h, d);
       const color = buildingColors[Math.floor(Math.random() * buildingColors.length)];
@@ -897,15 +905,6 @@ export class TrackBuilder {
       building.position.set(x, h / 2 - 2, z);
       building.castShadow = true;
       building.receiveShadow = true;
-
-      // Safety: verify building edge doesn't overlap track after placement
-      const actualHalfSize = Math.max(w, d) / 2;
-      if (this.distToTrack(x, z) < hw + actualHalfSize + 2) {
-        console.warn('[buildBuildings] Removing building too close to track:', x, z, 'dist:', this.distToTrack(x, z).toFixed(1));
-        geo.dispose();
-        mat.dispose();
-        continue;
-      }
 
       this._add(building);
 
@@ -11324,6 +11323,158 @@ export class TrackBuilder {
     }
   }
 
+  _buildShanghaiScenery() {
+    const hw = (this._trackWidth || CONFIG.trackWidth) / 2;
+
+    // ========== 主看台（起点直道旁 t≈0.1）==========
+    const t1 = 0.1;
+    const p1 = this.spline.getPointAt(t1);
+    const tan1 = this.spline.getTangentAt(t1);
+    const right1 = new THREE.Vector3(tan1.z, 0, -tan1.x).normalize();
+    const ang1 = Math.atan2(tan1.x, tan1.z);
+    const standW = 30, standH = 8, standD = 8;
+    let standPos = null;
+    for (let d = hw + 20; d <= hw + 55; d += 5) {
+      const tp = p1.clone().add(right1.clone().multiplyScalar(-d));
+      if (this.distToTrack(tp.x, tp.z) >= hw + standW / 2 + 8) { standPos = tp; break; }
+    }
+    if (standPos) {
+      const geo = new THREE.BoxGeometry(standW, standH, standD);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.7, metalness: 0.2 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(standPos.x, standH / 2 - 2, standPos.z);
+      mesh.rotation.y = ang1;
+      mesh.castShadow = true; mesh.receiveShadow = true;
+      this._add(mesh);
+      // UFO顶棚
+      const rGeo = new THREE.CylinderGeometry(10, 8, 1, 12);
+      const rMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.6 });
+      const roof = new THREE.Mesh(rGeo, rMat);
+      roof.position.set(standPos.x, standH + 1, standPos.z);
+      roof.rotation.y = ang1; roof.scale.set(1.5, 1, 0.8);
+      roof.castShadow = true;
+      this._add(roof);
+      // 红白座位
+      const seatC = [0xcc0000, 0xcc0000, 0xffffff];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 10; c++) {
+          const sg = new THREE.BoxGeometry(2.2, 0.4, 1);
+          const sm = new THREE.MeshStandardMaterial({ color: seatC[(r + c) % 3] });
+          const s = new THREE.Mesh(sg, sm);
+          const off = new THREE.Vector3(-standW / 2 + 2 + c * 2.8, 0.5 + r * 2, -standD / 2 + 1);
+          const ro = off.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), ang1);
+          s.position.set(standPos.x + ro.x, standH / 2 - 1.5 + ro.y, standPos.z + ro.z);
+          s.rotation.y = ang1;
+          this._add(s);
+        }
+      }
+    }
+
+    // ========== 副看台（t≈0.5）==========
+    const t2 = 0.5;
+    const p2 = this.spline.getPointAt(t2);
+    const tan2 = this.spline.getTangentAt(t2);
+    const right2 = new THREE.Vector3(tan2.z, 0, -tan2.x).normalize();
+    const ang2 = Math.atan2(tan2.x, tan2.z);
+    const s2W = 25, s2H = 6, s2D = 6;
+    let s2Pos = null;
+    for (let d = hw + 18; d <= hw + 50; d += 5) {
+      const tp = p2.clone().add(right2.clone().multiplyScalar(d));
+      if (this.distToTrack(tp.x, tp.z) >= hw + s2W / 2 + 8) { s2Pos = tp; break; }
+    }
+    if (s2Pos) {
+      const g = new THREE.BoxGeometry(s2W, s2H, s2D);
+      const m = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7 });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(s2Pos.x, s2H / 2 - 2, s2Pos.z);
+      mesh.rotation.y = ang2; mesh.castShadow = true;
+      this._add(mesh);
+    }
+
+    // ========== 维修区大楼（t≈0.05）==========
+    const tP = 0.05;
+    const pP = this.spline.getPointAt(tP);
+    const tanP = this.spline.getTangentAt(tP);
+    const rightP = new THREE.Vector3(tanP.z, 0, -tanP.x).normalize();
+    const angP = Math.atan2(tanP.x, tanP.z);
+    const pitW = 28, pitH = 5, pitD = 6;
+    let pitPos = null;
+    for (let d = hw + 18; d <= hw + 50; d += 5) {
+      const tp = pP.clone().add(rightP.clone().multiplyScalar(-d));
+      if (this.distToTrack(tp.x, tp.z) >= hw + pitW / 2 + 8) { pitPos = tp; break; }
+    }
+    if (pitPos) {
+      const g = new THREE.BoxGeometry(pitW, pitH, pitD);
+      const m = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.6, metalness: 0.3 });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(pitPos.x, pitH / 2 - 2, pitPos.z);
+      mesh.rotation.y = angP; mesh.castShadow = true;
+      this._add(mesh);
+    }
+
+    // ========== 媒体中心（t≈0.3）==========
+    const tM = 0.3;
+    const pM = this.spline.getPointAt(tM);
+    const tanM = this.spline.getTangentAt(tM);
+    const rightM = new THREE.Vector3(tanM.z, 0, -tanM.x).normalize();
+    const angM = Math.atan2(tanM.x, tanM.z);
+    const mcW = 15, mcH = 8, mcD = 6;
+    let mcPos = null;
+    for (let d = hw + 18; d <= hw + 50; d += 5) {
+      const tp = pM.clone().add(rightM.clone().multiplyScalar(d));
+      if (this.distToTrack(tp.x, tp.z) >= hw + mcW / 2 + 8) { mcPos = tp; break; }
+    }
+    if (mcPos) {
+      const g = new THREE.BoxGeometry(mcW, mcH, mcD);
+      const m = new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.3, metalness: 0.4 });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(mcPos.x, mcH / 2 - 2, mcPos.z);
+      mesh.rotation.y = angM; mesh.castShadow = true;
+      this._add(mesh);
+    }
+
+    // ========== F1赞助商广告牌（沿赛道均匀分布）==========
+    const sponsors = [
+      { name: 'ROLEX', bg: '#006039', fg: '#c0a060' },
+      { name: 'HEINEKEN', bg: '#006100', fg: '#ffffff' },
+      { name: 'DHL', bg: '#ffcc00', fg: '#cc0000' },
+      { name: 'PIRELLI', bg: '#cc0000', fg: '#ffffff' },
+      { name: 'AWS', bg: '#232f3e', fg: '#ff9900' },
+      { name: 'QATAR', bg: '#7c0053', fg: '#ffffff' },
+    ];
+    for (let i = 0; i < sponsors.length; i++) {
+      const t = (i + 0.5) / sponsors.length;
+      const pt = this.spline.getPointAt(t);
+      const tg = this.spline.getTangentAt(t);
+      const rt = new THREE.Vector3(tg.z, 0, -tg.x).normalize();
+      const side = i % 2 === 0 ? 1 : -1;
+      const dist = hw + 10 + Math.random() * 4;
+      const x = pt.x + rt.x * dist * side;
+      const z = pt.z + rt.z * dist * side;
+      if (this.distToTrack(x, z) < hw + 6) continue;
+      const sp = sponsors[i];
+      const pg = new THREE.CylinderGeometry(0.1, 0.1, 3, 6);
+      const pm = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.7 });
+      const post = new THREE.Mesh(pg, pm);
+      post.position.set(x, 0, z);
+      this._add(post);
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = sp.bg; ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = sp.fg; ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(sp.name, 128, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      const bg = new THREE.BoxGeometry(6, 3, 0.15);
+      const bm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3 });
+      const board = new THREE.Mesh(bg, bm);
+      board.position.set(x, 3, z);
+      board.rotation.y = Math.atan2(tg.x, tg.z);
+      board.castShadow = true;
+      this._add(board);
+    }
+  }
 
   getStartPositions() {
     const positions = [];
