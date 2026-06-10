@@ -107,31 +107,116 @@ export class TrackBuilder {
     geo.computeVertexNormals();
 
     const canvas = document.createElement('canvas');
-    canvas.width = 256; canvas.height = 256;
+    canvas.width = 512; canvas.height = 512;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#3a3a3a';
-    ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#333';
-    for (let i = 0; i < 16; i++)
-      for (let j = 0; j < 16; j++)
-        if ((i + j) % 2 === 0) ctx.fillRect(i * 16, j * 16, 16, 16);
-    ctx.fillStyle = '#555';
-    ctx.fillRect(0, 120, 256, 16);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([20, 15]);
-    ctx.beginPath();
-    ctx.moveTo(128, 0);
-    ctx.lineTo(128, 256);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, 256, 3);
-    ctx.fillRect(0, 253, 256, 3);
+
+    // Determine if this is a city scene for different road texture
+    const isCity = this.theme?.buildings?.cityStyle;
+
+    if (isCity) {
+      // Realistic city asphalt with grain, cracks, and oil stains
+      ctx.fillStyle = '#3d3d3d';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Asphalt grain noise
+      const imgData = ctx.getImageData(0, 0, 512, 512);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * 18;
+        data[i] = Math.max(0, Math.min(255, data[i] + noise));
+        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+        data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // Subtle cracks
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      for (let c = 0; c < 6; c++) {
+        ctx.beginPath();
+        let cx = Math.random() * 512, cy = Math.random() * 512;
+        ctx.moveTo(cx, cy);
+        for (let s = 0; s < 8; s++) {
+          cx += (Math.random() - 0.5) * 40;
+          cy += (Math.random() - 0.5) * 40;
+          ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+      }
+
+      // Oil stains (darker patches)
+      for (let s = 0; s < 4; s++) {
+        const sx = Math.random() * 512, sy = Math.random() * 512;
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 20 + Math.random() * 30);
+        grad.addColorStop(0, 'rgba(0,0,0,0.12)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(sx - 50, sy - 50, 100, 100);
+      }
+
+      // Subtle lane color variation (slightly lighter center wear)
+      const laneGrad = ctx.createLinearGradient(0, 0, 512, 0);
+      laneGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      laneGrad.addColorStop(0.3, 'rgba(255,255,255,0.03)');
+      laneGrad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+      laneGrad.addColorStop(0.7, 'rgba(255,255,255,0.03)');
+      laneGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = laneGrad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Solid white edge lines (proper width)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 512, 5);
+      ctx.fillRect(0, 507, 512, 5);
+
+      // Dashed center line (realistic proportions)
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([40, 30]);
+      ctx.beginPath();
+      ctx.moveTo(256, 0);
+      ctx.lineTo(256, 512);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Reflector dots along center line
+      ctx.fillStyle = '#cccccc';
+      for (let r = 0; r < 16; r++) {
+        ctx.beginPath();
+        ctx.arc(256, r * 32 + 16, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Default road texture (improved)
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(0, 0, 512, 512);
+      // Checkerboard pattern
+      ctx.fillStyle = '#333';
+      for (let i = 0; i < 32; i++)
+        for (let j = 0; j < 32; j++)
+          if ((i + j) % 2 === 0) ctx.fillRect(i * 16, j * 16, 16, 16);
+      // Center area lighter
+      ctx.fillStyle = '#444';
+      ctx.fillRect(0, 240, 512, 32);
+      // Dashed center line
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([30, 20]);
+      ctx.beginPath();
+      ctx.moveTo(256, 0);
+      ctx.lineTo(256, 512);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Edge lines
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, 512, 4);
+      ctx.fillRect(0, 508, 512, 4);
+    }
+
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 
-    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.1 });
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: isCity ? 0.7 : 0.6, metalness: isCity ? 0.05 : 0.1 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this._add(mesh);
@@ -263,24 +348,70 @@ export class TrackBuilder {
     geo.rotateX(-Math.PI / 2);
 
     const g = this.theme?.ground || {};
+    const isCity = this.theme?.buildings?.cityStyle;
 
     const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128;
+    canvas.width = isCity ? 256 : 128;
+    canvas.height = isCity ? 256 : 128;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grad.addColorStop(0, g.centerColor || '#3d7a28');
-    grad.addColorStop(1, g.edgeColor || '#2d5a1e');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 128);
-    ctx.fillStyle = g.dotColor || '#4a8c35';
-    for (let i = 0; i < (g.dotCount ?? 40); i++) {
-      const x = Math.random() * 120, y = Math.random() * 120;
-      ctx.fillRect(x, y, 2 + Math.random() * 3, 2 + Math.random() * 3);
+
+    if (isCity) {
+      // Concrete pavement texture for city
+      ctx.fillStyle = g.centerColor || '#7a7a7a';
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Concrete grain noise
+      const imgData = ctx.getImageData(0, 0, 256, 256);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * 14;
+        data[i] = Math.max(0, Math.min(255, data[i] + noise));
+        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+        data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // Expansion joint grid lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * 64, 0);
+        ctx.lineTo(i * 64, 256);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * 64);
+        ctx.lineTo(256, i * 64);
+        ctx.stroke();
+      }
+
+      // Weathering stains
+      for (let s = 0; s < 5; s++) {
+        const sx = Math.random() * 256, sy = Math.random() * 256;
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 15 + Math.random() * 20);
+        grad.addColorStop(0, 'rgba(0,0,0,0.08)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+      }
+    } else {
+      // Default grass/terrain texture
+      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, g.centerColor || '#3d7a28');
+      grad.addColorStop(1, g.edgeColor || '#2d5a1e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = g.dotColor || '#4a8c35';
+      for (let i = 0; i < (g.dotCount ?? 40); i++) {
+        const x = Math.random() * 120, y = Math.random() * 120;
+        ctx.fillRect(x, y, 2 + Math.random() * 3, 2 + Math.random() * 3);
+      }
     }
+
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(50, 50);
-    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: g.roughness ?? 0.95 });
+    tex.repeat.set(isCity ? 80 : 50, isCity ? 80 : 50);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: g.roughness ?? (isCity ? 0.85 : 0.95) });
     const ground = new THREE.Mesh(geo, mat);
     ground.position.y = -2;
     ground.receiveShadow = true;
@@ -802,6 +933,8 @@ export class TrackBuilder {
   buildBuildings() {
     const b = this.theme?.buildings;
     if (!b || !b.count) return;
+    // Skip generic buildings if the theme module handles them (e.g. city_streets)
+    if (b.cityStyle) return;
     console.log('[buildBuildings] theme buildings:', b);
 
     const count = b.count ?? 80;

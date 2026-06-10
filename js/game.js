@@ -66,6 +66,10 @@ export class Game {
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(this.ambientLight);
 
+    // Hemisphere light for natural sky/ground color bleed
+    this.hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3d7a28, 0.3);
+    this.scene.add(this.hemiLight);
+
     const sun = new THREE.DirectionalLight(0xffffff, 1.0);
     sun.position.set(50, 100, 50);
     sun.castShadow = true;
@@ -401,15 +405,25 @@ export class Game {
     this.scene.background = new THREE.Color(theme.sky.color);
     this.scene.fog = new THREE.Fog(theme.sky.color, theme.sky.fogNear, theme.sky.fogFar);
 
-    // Dynamic camera far plane for large tracks
+    // Dynamic camera far plane for large tracks (extra for city buildings)
     if (this.camera) {
-      this.camera.far = Math.max(500, theme.sky.fogFar + 100);
+      const isCity = theme.buildings?.cityStyle;
+      this.camera.far = Math.max(500, theme.sky.fogFar + (isCity ? 200 : 100));
       this.camera.updateProjectionMatrix();
     }
 
     if (this.ambientLight) {
       this.ambientLight.color.set(theme.lighting.ambientColor);
       this.ambientLight.intensity = theme.lighting.ambientIntensity;
+    }
+
+    // Update hemisphere light to match theme
+    if (this.hemiLight) {
+      this.hemiLight.color.set(theme.sky.color);
+      // Use ground color from theme if available, otherwise default
+      const groundColor = theme.ground?.edgeColor || 0x3d7a28;
+      this.hemiLight.groundColor.set(groundColor);
+      this.hemiLight.intensity = 0.3;
     }
     if (this.sun) {
       this.sun.color.set(theme.lighting.sunColor);

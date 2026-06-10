@@ -79,19 +79,29 @@ export class AIController {
     // 使用固定前瞻距离0.06（约5%赛道长度），确保提前看到弯道
     const curvatureLookT = 0.06;
 
-    // Step 3: 转向目标 - 短距离前瞻用于精确跟踪赛道
-    const steerLookT = 0.012;
-    const steerTarget = sp.getPointAt((this.splineT + steerLookT) % 1);
+    // Step 3: 双重前瞻转向 - 短距离精确跟踪 + 长距离预判弯道
+    const steerLookShort = 0.010;
+    const steerLookLong = 0.020;
+    const steerTargetShort = sp.getPointAt((this.splineT + steerLookShort) % 1);
+    const steerTargetLong = sp.getPointAt((this.splineT + steerLookLong) % 1);
 
     const hfwdX = Math.sin(heading);
     const hfwdZ = Math.cos(heading);
-    const sdx = steerTarget.x - pos.x;
-    const sdz = steerTarget.z - pos.z;
-    const scross = hfwdZ * sdx - hfwdX * sdz;
-    const sdot = hfwdX * sdx + hfwdZ * sdz;
-    const errAngle = Math.atan2(scross, sdot);
 
-    // Step 4: 横向偏差修正 - 计算车与赛道中心的偏移量
+    // 短距离errAngle - 精确跟踪
+    const ssx = steerTargetShort.x - pos.x;
+    const ssz = steerTargetShort.z - pos.z;
+    const errAngleShort = Math.atan2(hfwdZ * ssx - hfwdX * ssz, hfwdX * ssx + hfwdZ * ssz);
+
+    // 长距离errAngle - 预判弯道方向
+    const slx = steerTargetLong.x - pos.x;
+    const slz = steerTargetLong.z - pos.z;
+    const errAngleLong = Math.atan2(hfwdZ * slx - hfwdX * slz, hfwdX * slx + hfwdZ * slz);
+
+    // 混合：70%短距离 + 30%长距离预判
+    const errAngle = errAngleShort * 0.7 + errAngleLong * 0.3;
+
+    // Step 4: 横向偏差修正
     const nearest = sp.getPointAt(this.splineT);
     const tangent = sp.getTangentAt(this.splineT);
     const rightX = tangent.z;
@@ -102,31 +112,31 @@ export class AIController {
     const trackWidth = this.track._trackWidth || CONFIG.trackWidth;
     const normalizedError = crossTrackError / (trackWidth / 2);
 
-    // Step 5: 转向控制 - 结合目标方向和横向偏差修正
-    let steerFromTarget = Math.max(-1, Math.min(1, errAngle * 1.2));
-    const steerFromError = -normalizedError * 0.15;
-    let steer = Math.max(-1, Math.min(1, steerFromTarget + steerFromError));
+    // Step 5: 转向控制 - 更强的响应 + 横向偏差修正
+    // 偏离越大修正越强
+    const errorCorrection = Math.abs(normalizedError) > 0.3
+      ? -normalizedError * 0.4  // 强修正
+      : -normalizedError * 0.15; // 弱修正
+    let steerFromTarget = Math.max(-1, Math.min(1, errAngle * 1.5));
+    let steer = Math.max(-1, Math.min(1, steerFromTarget + errorCorrection));
 
-    // Step 5b: 避让前方车辆
+    // Step 5b: 避让前方车辆 - 更远探测 + 更强避让
     let obstacleAhead = false;
     let obstacleDist = Infinity;
-    const avoidLookT = 0.04; // 前方4%赛道长度内检测
+    const avoidLookT = 0.06; // 前方6%赛道长度内检测
     const myT = this.splineT;
 
     for (const other of allKarts) {
-      if (other === kart) continue; // 跳过自己
+      if (other === kart) continue;
 
-      // 找到其他车在赛道上的位置
       const otherPos = other.physics.chassisBody.position;
       let bestOtherT = 0;
       let bestOtherDist = Infinity;
-      // 粗搜索
       for (let t = 0; t < 1; t += 0.02) {
         const p = sp.getPointAt(t);
         const d = (otherPos.x - p.x) ** 2 + (otherPos.z - p.z) ** 2;
         if (d < bestOtherDist) { bestOtherDist = d; bestOtherT = t; }
       }
-      // 细搜索
       for (let dt = -0.01; dt <= 0.01; dt += 0.001) {
         let t = (bestOtherT + dt + 1) % 1;
         const p = sp.getPointAt(t);
@@ -134,33 +144,33 @@ export class AIController {
         if (d < bestOtherDist) { bestOtherDist = d; bestOtherT = t; }
       }
 
-      // 判断是否在前方（沿赛道前进方向）
       let dtAhead = bestOtherT - myT;
-      if (dtAhead < -0.5) dtAhead += 1.0; // 处理环绕
+      if (dtAhead < -0.5) dtAhead += 1.0;
       if (dtAhead < 0) dtAhead += 1.0;
 
-      // 在前方avoidLookT范围内，且距离足够近
       const distBetween = Math.sqrt(
         (pos.x - otherPos.x) ** 2 + (pos.z - otherPos.z) ** 2
       );
 
-      if (dtAhead < avoidLookT && distBetween < 8) {
+      if (dtAhead < avoidLookT && distBetween < 12) {
         obstacleAhead = true;
         if (distBetween < obstacleDist) obstacleDist = distBetween;
 
-        // 计算其他车相对于赛道中心的横向位置
+        // 计算对方横向位置
         const otherNearest = sp.getPointAt(bestOtherT);
         const otherTan = sp.getTangentAt(bestOtherT);
-        const otherRightX = otherTan.z;
-        const otherRightZ = -otherTan.x;
-        const otherLateral = (otherPos.x - otherNearest.x) * otherRightX +
-                             (otherPos.z - otherNearest.z) * otherRightZ;
+        const otherLateral = (otherPos.x - otherNearest.x) * otherTan.z +
+                             (otherPos.z - otherNearest.z) * (-otherTan.x);
         const otherNorm = otherLateral / (trackWidth / 2);
 
-        // 避让方向：如果对方在赛道左侧，我往右；反之往左
+        // 避让：距离越近力度越大，前方越近力度越大
+        const distFactor = Math.max(0, 1 - distBetween / 12);
+        const aheadFactor = Math.max(0, 1 - dtAhead / avoidLookT);
+        const avoidStrength = distFactor * aheadFactor;
+
+        // 避让方向
         const avoidDir = otherNorm > 0 ? -1 : 1;
-        const avoidStrength = Math.max(0, 1 - distBetween / 8) * (1 - dtAhead / avoidLookT);
-        steer += avoidDir * avoidStrength * 0.6;
+        steer += avoidDir * avoidStrength * 0.9;
         steer = Math.max(-1, Math.min(1, steer));
       }
     }
@@ -201,9 +211,10 @@ export class AIController {
       maxSafeSpeed = Math.min(maxSafeSpeed, turnSpeed);
     }
 
-    // 前方有车时减速
-    if (obstacleAhead && obstacleDist < 6) {
-      const obsSpeed = Math.max(5, speed * 0.4 * (obstacleDist / 6));
+    // 前方有车时减速 - 更早更猛
+    if (obstacleAhead && obstacleDist < 10) {
+      const distFactor = obstacleDist / 10;
+      const obsSpeed = Math.max(3, speed * 0.3 * distFactor);
       maxSafeSpeed = Math.min(maxSafeSpeed, obsSpeed);
     }
 

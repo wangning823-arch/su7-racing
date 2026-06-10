@@ -950,35 +950,35 @@
       ],
       "theme": {
         "sky": {
-          "color": 10398392,
-          "fogNear": 90,
-          "fogFar": 280
+          "color": 10526880,
+          "fogNear": 120,
+          "fogFar": 350
         },
         "ground": {
-          "centerColor": "#6b6b6b",
-          "edgeColor": "#505050",
-          "dotColor": "#787878",
-          "dotCount": 60,
-          "roughness": 0.9
+          "centerColor": "#7a7a7a",
+          "edgeColor": "#606060",
+          "dotColor": "#888888",
+          "dotCount": 80,
+          "roughness": 0.85
         },
         "trees": {
           "count": 0
         },
         "lighting": {
-          "ambientColor": 13687008,
-          "ambientIntensity": 0.55,
-          "sunColor": 15261912,
-          "sunIntensity": 0.8
+          "ambientColor": 14408632,
+          "ambientIntensity": 0.5,
+          "sunColor": 16777045,
+          "sunIntensity": 0.9
         },
         "scenery": {
-          "standColor": 4868690,
-          "roofColor": 2899536,
+          "standColor": 5592422,
+          "roofColor": 3359829,
           "seatColors": [
-            5592422,
-            6710903,
-            4473941
+            4478310,
+            5596791,
+            3359829
           ],
-          "boardColor": 1710638,
+          "boardColor": 2763322,
           "tireColor": 1118481
         },
         "buildings": {
@@ -987,9 +987,11 @@
           "maxHeight": 30,
           "minWidth": 6,
           "maxWidth": 14,
-          "minDistToTrack": 10
+          "minDistToTrack": 10,
+          "cityStyle": true
         }
-      }
+      },
+      "themeId": "city_streets"
     },
     {
       "id": "coastal-road",

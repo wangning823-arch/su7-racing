@@ -22,8 +22,10 @@ import { buildAlbertParkScenery } from './albert_park.js';
 import { buildAmericasScenery } from './americas.js';
 import { buildBakuScenery } from './baku.js';
 import { buildShanghaiScenery } from './shanghai.js';
+import { buildCityStreetsScenery } from './city_streets.js';
 
 export const THEME_BUILDERS = {
+  'city_streets': buildCityStreetsScenery,
   'losail': buildLosailScenery,
   'red_bull_ring': buildRedBullRingScenery,
   'rodriguez': buildRodriguezScenery,
