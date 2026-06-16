@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D AI 赛道模拟器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;overflow:hidden;height:100vh}
+#app{display:flex;height:100vh}
+#sidebar{width:220px;background:#161b22;border-right:1px solid #30363d;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+#sidebar h2{font-size:14px;color:#58a6ff;margin:4px 0}
+#sidebar label{font-size:12px;color:#8b949e;display:block;margin-bottom:3px}
+#sidebar select,#sidebar input[type=range]{width:100%;margin-bottom:6px;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;padding:4px;border-radius:4px}
+#sidebar button{width:100%;padding:8px;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+#sidebar button:hover{background:#2ea043}
+#sidebar button.stop{background:#da3633}
+#sidebar button.stop:hover{background:#f85149}
+#right-panel{width:220px;background:#161b22;border-left:1px solid #30363d;padding:12px;overflow-y:auto;flex-shrink:0}
+#right-panel h2{font-size:13px;color:#58a6ff;margin:6px 0 4px}
+#right-panel .section{margin-bottom:10px}
+.stat{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #21262d}
+.stat span:last-child{color:#58a6ff;font-weight:600}
+.stat-group{margin-bottom:8px}
+.stat-group-title{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;padding-bottom:2px;border-bottom:1px solid #30363d}
+#canvas-wrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;top:12px;left:12px;background:rgba(22,27,34,0.9);padding:8px 14px;border-radius:8px;border:1px solid #30363d;font-size:13px;pointer-events:none}
+#hud div{margin:2px 0}
+.checkbox-row{display:flex;align-items:center;gap:6px;font-size:12px;margin:3px 0}
+.checkbox-row input{margin:0}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="sidebar">
+<h2>🚗 2D AI 赛道模拟器</h2>
+<div>
+<label>赛道选择</label>
+<select id="trackSelect"></select>
+</div>
+<div>
+<label>难度</label>
+<select id="difficultySelect">
+<option value="0">简单</option>
+<option value="1">普通</option>
+<option value="2" selected>困难</option>
+<option value="3">专家</option>
+<option value="4">极限</option>
+</select>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="showRacingLine" checked><label for="showRacingLine">显示最佳路径</label></div>
+<div class="checkbox-row"><input type="checkbox" id="showHeatmap" checked><label for="showHeatmap">显示曲率热力图</label></div>
+<div class="checkbox-row"><input type="checkbox" id="showSpeedMap" checked><label for="showSpeedMap">显示速度限制</label></div>
+<div class="checkbox-row"><input type="checkbox" id="showAIPath" checked><label for="showAIPath">显示AI路径</label></div>
+<button id="startBtn">开始模拟</button>
+<button id="stopBtn" class="stop" style="display:none">停止</button>
+<button id="editBtn" onclick="toggleEditMode()" style="background:#8957e5">手动编辑线路</button>
+<button onclick="smoothManualLine()" style="background:#1f6feb">平滑线路</button>
+<button onclick="saveRacingLine()" style="background:#e3b341;color:#000">保存线路</button>
+<span id="saveStatus" style="font-size:11px;color:#2ecc71;margin-left:4px"></span>
+<hr style="border-color:#30363d">
+<div id="stats">
+<div class="stat"><span>时间</span><span id="sTime">0.0s</span></div>
+<div class="stat"><span>圈数</span><span id="sLap">0/3</span></div>
+<div class="stat"><span>速度</span><span id="sSpeed">0 km/h</span></div>
+<div class="stat"><span>位置</span><span id="sPos">0%</span></div>
+<div class="stat"><span>撞墙</span><span id="sWall">0</span></div>
+<div class="stat"><span>最佳圈速</span><span id="sBest">--</span></div>
+</div>
+</div>
+<div id="canvas-wrap">
+<canvas id="cv"></canvas>
+<div id="hud"></div>
+</div>
+<div id="right-panel">
+<h2>最佳路径参数</h2>
+<div class="section">
+<div class="stat-group">
+<div class="stat-group-title">采样与宽度</div>
+<div class="stat"><span>采样点 N</span><span id="pN">600</span></div>
+<div class="stat"><span>赛道宽度</span><span id="pWidth">--</span></div>
+<div class="stat"><span>halfW</span><span id="pHalfW">--</span></div>
+<div class="stat"><span>路径长度</span><span id="pPathLen">--</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">Biharmonic 松弛</div>
+<div class="stat"><span>曲率平滑</span><span>30 iter</span></div>
+<div class="stat"><span>前瞻距离</span><span>LOOK=40</span></div>
+<div class="stat"><span>松弛迭代</span><span>5000 iter</span></div>
+<div class="stat"><span>松弛系数</span><span>α=0.15</span></div>
+<div class="stat"><span>最终平滑</span><span>30 iter</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">物理参数</div>
+<div class="stat"><span>摩擦系数 μ</span><span>0.85</span></div>
+<div class="stat"><span>缩放因子</span><span>1.2</span></div>
+<div class="stat"><span>最低速度</span><span id="pFloor">8 m/s</span></div>
+<div class="stat"><span>重力加速度</span><span>9.81 m/s²</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">AI 控制</div>
+<div class="stat"><span>刹车触发</span><span>1.12x</span></div>
+<div class="stat"><span>ppGain</span><span>3.5</span></div>
+<div class="stat"><span>横向修正</span><span>1.2</span></div>
+<div class="stat"><span>启动帧数</span><span>30</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">计算结果</div>
+<div class="stat"><span>偏移范围</span><span id="pOffRange">--</span></div>
+<div class="stat"><span>最大曲率</span><span id="pMaxCurv">--</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">最优圈速</div>
+<div class="stat"><span>单圈时间</span><span id="pOptTime" style="color:#2ecc71;font-size:14px">--</span></div>
+<div class="stat"><span>平均速度</span><span id="pOptAvg" style="color:#2ecc71">--</span></div>
+<div class="stat"><span>3圈总时间</span><span id="pOptTotal" style="color:#2ecc71">--</span></div>
+</div>
+<div class="stat-group">
+<div class="stat-group-title">控制点速度</div>
+<div id="cpSpeeds" style="font-size:11px;max-height:200px;overflow-y:auto"></div>
+</div>
+</div>
+</div>
+</div>
+<script>
+const TRACKS_JSON = 'data/tracks.json';
+const N = 600;
+const TOTAL_LAPS = 3;
+const GRAVITY = 9.81;
+
+let TRACKS = [];
+let currentTrack = null;
+let currentTrackIdx = 0;
+let difficulty = 2;
+
+let kart = null;
+let ai = null;
+let animId = null;
+let running = false;
+let raceTime = 0;
+let lapCount = 0;
+let wallHits = 0;
+let bestLap = Infinity;
+let lapStartTime = 0;
+let prevCrossed = false;
+let racingLinePoints = [];
+let racingLineArcTable = [];
+let speedLimitMap = [];
+let curvatureData = [];
+let racingOffsets = null;
+
+let editMode = false;
+let editControlPoints = [];
+let dragIdx = -1;
+let dragStartScreenX = 0;
+let dragStartScreenY = 0;
+let dragStartOff = 0;
+let dragNormalX = 0;
+let dragNormalZ = 0;
+let screenTransform = null;
+
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+
+function buildEditControlPoints() {
+  if (!currentTrack || !racingOffsets) return;
+  const pts = currentTrack.points;
+  const STEP = 15;
+  editControlPoints = [];
+  for (let i = 0; i < N; i += STEP) {
+    const t = i / N;
+    const p = catmullRomPoint(pts, t);
+    const tan = catmullRomTangent(pts, t);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const nx = -tan[2] / tLen;
+    const nz = tan[0] / tLen;
+    editControlPoints.push({
+      idx: i,
+      offset: racingOffsets[i],
+      baseX: p[0],
+      baseZ: p[2],
+      nx, nz
+    });
+  }
+}
+
+function rebuildFromControlPoints() {
+  if (!currentTrack || editControlPoints.length === 0) return;
+  const pts = currentTrack.points;
+
+  const ctrlPts2D = editControlPoints.map(cp => {
+    const p = catmullRomPoint(pts, cp.idx / N);
+    const tan = catmullRomTangent(pts, cp.idx / N);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+    return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
+  });
+
+  racingLinePoints = [];
+  racingLineArcTable = [];
+  let arcAccum = 0;
+  for (let i = 0; i < N; i++) {
+    const t = i / N;
+    const n = ctrlPts2D.length;
+    const f = t * n;
+    const idx = Math.floor(f);
+    const frac = f - idx;
+    const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
+    const p1 = ctrlPts2D[idx % n];
+    const p2 = ctrlPts2D[(idx + 1) % n];
+    const p3 = ctrlPts2D[(idx + 2) % n];
+    const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    racingLinePoints.push([x, 0, z]);
+    if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+    racingLineArcTable.push(arcAccum);
+  }
+
+  speedLimitMap = computeSpeedLimitMap(racingLinePoints);
+  updateCPSpeeds();
+
+  const optResult = computeOptimalLapTime();
+  if (optResult) {
+    document.getElementById('pOptTime').textContent = optResult.totalTime.toFixed(2) + 's';
+    const avgSpeed = arcAccum / optResult.totalTime * 3.6;
+    document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
+    document.getElementById('pOptTotal').textContent = (optResult.totalTime * TOTAL_LAPS).toFixed(1) + 's';
+  }
+}
+
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  if (!editMode || !screenTransform) return;
+  const { x, y } = getCanvasCoords(e);
+  const { toScreen } = screenTransform;
+  let bestIdx = -1, bestDist = 20;
+  for (let i = 0; i < editControlPoints.length; i++) {
+    const cp = editControlPoints[i];
+    const p = racingLinePoints[cp.idx];
+    if (!p) continue;
+    const [sx, sz] = toScreen(p[0], p[2]);
+    const d = Math.sqrt((x - sx) ** 2 + (y - sz) ** 2);
+    if (d < bestDist) { bestDist = d; bestIdx = i; }
+  }
+  if (bestIdx >= 0) {
+    dragIdx = bestIdx;
+    dragStartScreenX = x;
+    dragStartScreenY = y;
+    dragStartOff = editControlPoints[bestIdx].offset;
+    const cp = editControlPoints[bestIdx];
+    const t = cp.idx / N;
+    const tan = catmullRomTangent(currentTrack.points, t);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const trackNx = -tan[2] / tLen;
+    const trackNz = tan[0] / tLen;
+    const [bx, bz] = toScreen(cp.baseX, cp.baseZ);
+    const [bx2, bz2] = toScreen(cp.baseX + trackNx, cp.baseZ + trackNz);
+    const snx = bx2 - bx, snz = bz2 - bz;
+    const snLen = Math.sqrt(snx * snx + snz * snz) || 1;
+    dragNormalX = -snx / snLen;
+    dragNormalZ = -snz / snLen;
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!editMode || dragIdx < 0 || !screenTransform) return;
+  const { x, y } = getCanvasCoords(e);
+  const cp = editControlPoints[dragIdx];
+  const dx = x - dragStartScreenX;
+  const dy = y - dragStartScreenY;
+  const normalProj = dx * dragNormalX + dy * dragNormalZ;
+  const halfW = currentTrack.trackWidth / 2 * 0.85;
+  const pixelsPerUnit = screenTransform.scale;
+  const newOff = Math.max(-halfW, Math.min(halfW, dragStartOff - normalProj / pixelsPerUnit));
+  editControlPoints[dragIdx].offset = newOff;
+
+  const pts = currentTrack.points;
+  for (let ci = 0; ci < editControlPoints.length; ci++) {
+    const c = editControlPoints[ci];
+    const nextCi = (ci + 1) % editControlPoints.length;
+    const cpNext = editControlPoints[nextCi];
+    const count = cpNext.idx > c.idx ? cpNext.idx - c.idx : N - c.idx + cpNext.idx;
+    for (let j = 0; j < count; j++) {
+      const idx = (c.idx + j) % N;
+      racingOffsets[idx] = lerp(c.offset, cpNext.offset, j / count);
+    }
+  }
+
+  const smoothed = smooth1d(new Float64Array(racingOffsets), 20);
+  for (let i = 0; i < N; i++) racingOffsets[i] = smoothed[i];
+
+  const ctrlPts2D = editControlPoints.map(cp => {
+    const p = catmullRomPoint(pts, cp.idx / N);
+    const tan = catmullRomTangent(pts, cp.idx / N);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+    return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
+  });
+
+  for (let i = 0; i < N; i++) {
+    const t = i / N;
+    const n = ctrlPts2D.length;
+    const f = t * n;
+    const idx = Math.floor(f);
+    const frac = f - idx;
+    const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
+    const p1 = ctrlPts2D[idx % n];
+    const p2 = ctrlPts2D[(idx + 1) % n];
+    const p3 = ctrlPts2D[(idx + 2) % n];
+    const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    racingLinePoints[i] = [x, 0, z];
+  }
+
+  draw();
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (dragIdx >= 0) {
+    rebuildFromControlPoints();
+    draw();
+  }
+  dragIdx = -1;
+  canvas.style.cursor = editMode ? 'crosshair' : 'default';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  dragIdx = -1;
+  canvas.style.cursor = editMode ? 'crosshair' : 'default';
+});
+
+canvas.addEventListener('dblclick', (e) => {
+  if (!editMode || !screenTransform) return;
+  const { x, y } = getCanvasCoords(e);
+  const { toScreen } = screenTransform;
+  let bestIdx = -1, bestDist = 20;
+  for (let i = 0; i < editControlPoints.length; i++) {
+    const cp = editControlPoints[i];
+    const p = racingLinePoints[cp.idx];
+    if (!p) continue;
+    const [sx, sz] = toScreen(p[0], p[2]);
+    const d = Math.sqrt((x - sx) ** 2 + (y - sz) ** 2);
+    if (d < bestDist) { bestDist = d; bestIdx = i; }
+  }
+  if (bestIdx >= 0) {
+    editControlPoints[bestIdx].offset = 0;
+    rebuildFromControlPoints();
+  }
+});
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('editBtn');
+  if (editMode) {
+    buildEditControlPoints();
+    btn.textContent = '退出编辑模式';
+    btn.style.background = '#da3633';
+    canvas.style.cursor = 'crosshair';
+  } else {
+    btn.textContent = '手动编辑线路';
+    btn.style.background = '#238636';
+    canvas.style.cursor = 'default';
+    dragIdx = -1;
+  }
+  if (!running) draw();
+}
+
+function smoothManualLine() {
+  if (!racingOffsets) return;
+  racingOffsets = smooth1d(racingOffsets, 20);
+  const pts = currentTrack.points;
+
+  const ctrlPts2D = editControlPoints.map(cp => {
+    const p = catmullRomPoint(pts, cp.idx / N);
+    const tan = catmullRomTangent(pts, cp.idx / N);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+    return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
+  });
+
+  racingLinePoints = [];
+  racingLineArcTable = [];
+  let arcAccum = 0;
+  for (let i = 0; i < N; i++) {
+    const t = i / N;
+    const n = ctrlPts2D.length;
+    const f = t * n;
+    const idx = Math.floor(f);
+    const frac = f - idx;
+    const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
+    const p1 = ctrlPts2D[idx % n];
+    const p2 = ctrlPts2D[(idx + 1) % n];
+    const p3 = ctrlPts2D[(idx + 2) % n];
+    const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    racingLinePoints.push([x, 0, z]);
+    if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+    racingLineArcTable.push(arcAccum);
+  }
+
+  speedLimitMap = computeSpeedLimitMap(racingLinePoints);
+  updateCPSpeeds();
+  if (editMode) buildEditControlPoints();
+  const optResult = computeOptimalLapTime();
+  if (optResult) {
+    document.getElementById('pOptTime').textContent = optResult.totalTime.toFixed(2) + 's';
+    const avgSpeed = arcAccum / optResult.totalTime * 3.6;
+    document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
+    document.getElementById('pOptTotal').textContent = (optResult.totalTime * TOTAL_LAPS).toFixed(1) + 's';
+  }
+  if (!running) draw();
+}
+
+function saveRacingLine() {
+  if (!racingOffsets || !currentTrack) return;
+  const data = {
+    trackId: currentTrack.id,
+    trackName: currentTrack.name,
+    offsets: Array.from(racingOffsets),
+    controlPoints: editControlPoints.map(cp => ({ idx: cp.idx, offset: cp.offset })),
+    savedAt: new Date().toISOString()
+  };
+  const jsonStr = JSON.stringify(data);
+  localStorage.setItem('racingLine_' + currentTrack.id, jsonStr);
+  console.log('Saved to localStorage, controlPoints:', data.controlPoints.length);
+
+  fetch('/api/save-racing-line', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: jsonStr
+  }).then(r => r.json()).then(res => {
+    if (res.ok) {
+      document.getElementById('saveStatus').textContent = '已保存 ✓';
+    } else {
+      document.getElementById('saveStatus').textContent = '服务器保存失败: ' + res.error;
+    }
+    setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 3000);
+  }).catch(e => {
+    document.getElementById('saveStatus').textContent = '服务器保存失败: ' + e.message;
+    setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 3000);
+  });
+}
+
+async function loadSavedLine() {
+  if (!currentTrack) return false;
+  const key = 'racingLine_' + currentTrack.id;
+  console.log('loadSavedLine: trackId =', currentTrack.id, 'key =', key);
+
+  let data = null;
+
+  try {
+    const raw = localStorage.getItem(key);
+    console.log('localStorage raw:', raw ? raw.substring(0, 80) + '...' : 'null');
+    if (raw) {
+      const localData = JSON.parse(raw);
+      console.log('localStorage trackId:', localData.trackId, 'offsets:', localData.offsets ? localData.offsets.length : 0);
+      if (localData.trackId === currentTrack.id && localData.offsets && localData.offsets.length === N) {
+        data = localData;
+        console.log('Loaded from localStorage ✓');
+      }
+    }
+  } catch (e) { console.log('localStorage load error:', e); }
+
+  if (!data) {
+    try {
+      const resp = await fetch('data/racing-line-manual.json?t=' + Date.now());
+      if (resp.ok) {
+        const serverData = await resp.json();
+        console.log('Server trackId:', serverData.trackId, 'offsets:', serverData.offsets ? serverData.offsets.length : 0);
+        if (serverData.trackId === currentTrack.id && serverData.offsets && serverData.offsets.length === N) {
+          data = serverData;
+          console.log('Loaded from server ✓');
+        }
+      }
+    } catch (e) { console.log('Server load error:', e); }
+  }
+
+  if (!data) { console.log('No saved line found'); return false; }
+
+  const pts = currentTrack.points;
+  const halfW = currentTrack.trackWidth / 2;
+  let arcAccum = 0;
+
+  if (data.controlPoints && data.controlPoints.length > 0) {
+    editControlPoints = data.controlPoints.map(cp => {
+      const p = catmullRomPoint(pts, cp.idx / N);
+      const tan = catmullRomTangent(pts, cp.idx / N);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      return {
+        idx: cp.idx,
+        offset: cp.offset,
+        baseX: p[0],
+        baseZ: p[2],
+        nx: -tan[2] / tLen,
+        nz: tan[0] / tLen
+      };
+    });
+
+    for (let i = 0; i < N; i++) racingOffsets[i] = data.offsets[i];
+
+    const ctrlPts2D = editControlPoints.map(cp => {
+      const p = catmullRomPoint(pts, cp.idx / N);
+      const tan = catmullRomTangent(pts, cp.idx / N);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+      return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
+    });
+
+    racingLinePoints = [];
+    racingLineArcTable = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / N;
+      const n = ctrlPts2D.length;
+      const f = t * n;
+      const idx = Math.floor(f);
+      const frac = f - idx;
+      const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
+      const p1 = ctrlPts2D[idx % n];
+      const p2 = ctrlPts2D[(idx + 1) % n];
+      const p3 = ctrlPts2D[(idx + 2) % n];
+      const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+      const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+      const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+      racingLinePoints.push([x, 0, z]);
+      if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+      racingLineArcTable.push(arcAccum);
+    }
+  } else {
+    for (let i = 0; i < N; i++) racingOffsets[i] = data.offsets[i];
+    racingLinePoints = [];
+    racingLineArcTable = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / N;
+      const p = catmullRomPoint(pts, t);
+      const tan = catmullRomTangent(pts, t);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      const nx = -tan[2] / tLen;
+      const nz = tan[0] / tLen;
+      const off = Math.max(-halfW, Math.min(halfW, racingOffsets[i]));
+      racingLinePoints.push([p[0] + nx * off, 0, p[2] + nz * off]);
+      if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+      racingLineArcTable.push(arcAccum);
+    }
+  }
+
+  speedLimitMap = computeSpeedLimitMap(racingLinePoints);
+  updateCPSpeeds();
+  if (editMode) buildEditControlPoints();
+  const optResult = computeOptimalLapTime();
+  if (optResult) {
+    document.getElementById('pOptTime').textContent = optResult.totalTime.toFixed(2) + 's';
+    const avgSpeed = arcAccum / optResult.totalTime * 3.6;
+    document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
+    document.getElementById('pOptTotal').textContent = (optResult.totalTime * TOTAL_LAPS).toFixed(1) + 's';
+  }
+  return true;
+}
+
+function catmullRomPoint(pts, t) {
+  const n = pts.length;
+  const f = t * n;
+  const i = Math.floor(f);
+  const frac = f - i;
+  const p0 = pts[((i - 1) % n + n) % n];
+  const p1 = pts[i % n];
+  const p2 = pts[(i + 1) % n];
+  const p3 = pts[(i + 2) % n];
+  const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+  return [
+    0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * tt + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * tt2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * tt3),
+    0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * tt + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * tt2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * tt3),
+    0.5 * ((2 * p1[2]) + (-p0[2] + p2[2]) * tt + (2 * p0[2] - 5 * p1[2] + 4 * p2[2] - p3[2]) * tt2 + (-p0[2] + 3 * p1[2] - 3 * p2[2] + p3[2]) * tt3)
+  ];
+}
+
+function catmullRomTangent(pts, t) {
+  const n = pts.length;
+  const f = t * n;
+  const i = Math.floor(f);
+  const frac = f - i;
+  const p0 = pts[((i - 1) % n + n) % n];
+  const p1 = pts[i % n];
+  const p2 = pts[(i + 1) % n];
+  const p3 = pts[(i + 2) % n];
+  const tt = frac, tt2 = tt * tt;
+  return [
+    0.5 * ((-p0[0] + p2[0]) + (4 * p0[0] - 10 * p1[0] + 8 * p2[0] - 2 * p3[0]) * tt + (-3 * p0[0] + 9 * p1[0] - 9 * p2[0] + 3 * p3[0]) * tt2) * n,
+    0,
+    0.5 * ((-p0[2] + p2[2]) + (4 * p0[2] - 10 * p1[2] + 8 * p2[2] - 2 * p3[2]) * tt + (-3 * p0[2] + 9 * p1[2] - 9 * p2[2] + 3 * p3[2]) * tt2) * n
+  ];
+}
+
+function catmullRomNormal(pts, t) {
+  const tan = catmullRomTangent(pts, t);
+  const len = Math.sqrt(tan[0] * tan[0] + tan[2] * tan[2]) || 1;
+  return [-tan[2] / len, 0, tan[0] / len];
+}
+
+function dist2D(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2);
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function smooth1d(arr, iter) {
+  const n = arr.length;
+  for (let k = 0; k < iter; k++) {
+    const nxt = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      nxt[i] = 0.25 * arr[(i - 1 + n) % n] + 0.5 * arr[i] + 0.25 * arr[(i + 1) % n];
+    }
+    arr = nxt;
+  }
+  return arr;
+}
+
+class Kart2D {
+  constructor() {
+    this.x = 0;
+    this.z = 0;
+    this.vx = 0;
+    this.vz = 0;
+    this.heading = 0;
+    this.speed = 0;
+    this.steerInput = 0;
+    this.throttle = 0;
+    this.brake = 0;
+    this.trackT = 0;
+    this.width = 1.8;
+    this.length = 3.0;
+  }
+
+  reset(x, z, heading) {
+    this.x = x;
+    this.z = z;
+    this.vx = 0;
+    this.vz = 0;
+    this.heading = heading;
+    this.speed = 0;
+    this.steerInput = 0;
+    this.throttle = 0;
+    this.brake = 0;
+  }
+
+  update(dt) {
+    const mu = 0.85;
+    const scaleFactor = 1.2;
+    const maxSpeed = 83.3;
+    const engineForce = 120;
+    const brakeForce = 80;
+    const steerAngle = 0.5;
+    const mass = 150;
+
+    const sinH = Math.sin(this.heading);
+    const cosH = Math.cos(this.heading);
+    const forwardX = sinH;
+    const forwardZ = cosH;
+    const rightX = cosH;
+    const rightZ = -sinH;
+
+    const velDotFwd = this.vx * forwardX + this.vz * forwardZ;
+    const velDotRight = this.vx * rightX + this.vz * rightZ;
+
+    let accel = 0;
+    if (this.throttle > 0 && this.speed < maxSpeed) {
+      accel = engineForce * this.throttle / mass;
+    }
+    if (this.brake > 0) {
+      accel -= brakeForce * this.brake / mass;
+    }
+
+    const speedSign = velDotFwd >= 0 ? 1 : -1;
+    this.vx += accel * forwardX * dt;
+    this.vz += accel * forwardZ * dt;
+
+    if (Math.abs(velDotRight) > 0.1) {
+      const friction = 0.92;
+      this.vx -= velDotRight * rightX * (1 - friction);
+      this.vz -= velDotRight * rightZ * (1 - friction);
+    }
+
+    const turnRate = steerAngle * this.steerInput * Math.min(1, this.speed / 5) * (1 + this.speed / 60);
+    this.heading += turnRate * dt;
+
+    this.x += this.vx * dt;
+    this.z += this.vz * dt;
+
+    this.speed = Math.sqrt(this.vx * this.vx + this.vz * this.vz);
+  }
+
+  enforceBarrier(pts) {
+    const halfW = (currentTrack ? currentTrack.trackWidth / 2 : 7) * 0.95;
+    const rlLen = racingLinePoints.length;
+    let bestT = this.trackT;
+    let bestDist = Infinity;
+    for (let dt = -0.05; dt <= 0.05; dt += 0.001) {
+      const t = ((bestT + dt) % 1 + 1) % 1;
+      const idx = Math.floor(t * rlLen) % rlLen;
+      const p = racingLinePoints[idx];
+      const d = (this.x - p[0]) ** 2 + (this.z - p[2]) ** 2;
+      if (d < bestDist) { bestDist = d; bestT = t; }
+    }
+    this.trackT = bestT;
+
+    const idx = Math.floor(bestT * rlLen) % rlLen;
+    const p = racingLinePoints[idx];
+    const rlTan = catmullRomTangent(pts, bestT);
+    const tLen = Math.sqrt(rlTan[0] ** 2 + rlTan[2] ** 2) || 1;
+    const nx = -rlTan[2] / tLen;
+    const nz = rlTan[0] / tLen;
+    const dx = this.x - p[0];
+    const dz = this.z - p[2];
+    const crossDist = dx * nx + dz * nz;
+
+    if (Math.abs(crossDist) > halfW) {
+      const sign = crossDist > 0 ? 1 : -1;
+      this.x = p[0] + nx * sign * halfW;
+      this.z = p[2] + nz * sign * halfW;
+
+      const tan = catmullRomTangent(pts, bestT);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      const fwdX = tan[0] / tLen;
+      const fwdZ = tan[2] / tLen;
+      const velDotFwd = this.vx * fwdX + this.vz * fwdZ;
+      this.vx = fwdX * velDotFwd;
+      this.vz = fwdZ * velDotFwd;
+      wallHits++;
+      return true;
+    }
+    return false;
+  }
+}
+
+class AIController2D {
+  constructor() {
+    this.trackT = 0;
+    this.frameCount = 0;
+    this.stuckFrames = 0;
+    this.lastPos = null;
+    this.reverseTimer = 0;
+    this.reverseCooldown = 0;
+    this.recoveryFrames = 0;
+    this.lastLateralError = 0;
+  }
+
+  init(pts) {
+    const rlLen = racingLinePoints.length;
+    let bestT = 0;
+    let bestDist = Infinity;
+    for (let t = 0; t < 1; t += 0.005) {
+      const idx = Math.floor(t * rlLen) % rlLen;
+      const p = racingLinePoints[idx];
+      const d = (kart.x - p[0]) ** 2 + (kart.z - p[2]) ** 2;
+      if (d < bestDist) { bestDist = d; bestT = t; }
+    }
+    this.trackT = bestT;
+    this.frameCount = 0;
+    this.stuckFrames = 0;
+    this.reverseTimer = 0;
+    this.reverseCooldown = 0;
+    this.recoveryFrames = 0;
+  }
+
+  getInput(pts) {
+    const speed = kart.speed;
+    const heading = kart.heading;
+
+    this.frameCount++;
+
+    const halfW = (currentTrack ? currentTrack.trackWidth / 2 : 7) * 0.85;
+    const rlLen = racingLinePoints.length;
+
+    const fwdRange = Math.max(0.03, Math.min(0.15, speed * 0.004));
+    const backRange = 0.01;
+    let bestT = this.trackT;
+    let bestDist = Infinity;
+    for (let dt = -backRange; dt <= fwdRange; dt += 0.0003) {
+      const t = ((this.trackT + dt) % 1 + 1) % 1;
+      const idx = Math.floor(t * rlLen) % rlLen;
+      const p = racingLinePoints[idx];
+      const d = (kart.x - p[0]) ** 2 + (kart.z - p[2]) ** 2;
+      if (d < bestDist) { bestDist = d; bestT = t; }
+    }
+    if (bestDist > 400) {
+      for (let t = 0; t < 1; t += 0.005) {
+        const idx = Math.floor(t * rlLen) % rlLen;
+        const p = racingLinePoints[idx];
+        const d = (kart.x - p[0]) ** 2 + (kart.z - p[2]) ** 2;
+        if (d < bestDist) { bestDist = d; bestT = t; }
+      }
+    }
+    this.trackT = bestT;
+
+    const getRLPoint = (t) => {
+      const idx = Math.floor(((t % 1) + 1) % 1 * rlLen) % rlLen;
+      return racingLinePoints[idx];
+    };
+
+    const steerLookShort = 0.010;
+    const steerLookMid = 0.020;
+    const steerLookFar = 0.035;
+    const targetShort = getRLPoint(this.trackT + steerLookShort);
+    const targetMid = getRLPoint(this.trackT + steerLookMid);
+    const targetFar = getRLPoint(this.trackT + steerLookFar);
+
+    const hfwdX = Math.sin(heading);
+    const hfwdZ = Math.cos(heading);
+
+    const calcAngle = (target) => {
+      const dx = target[0] - kart.x;
+      const dz = target[2] - kart.z;
+      const dist = Math.sqrt(dx * dx + dz * dz) || 1;
+      const nx = dx / dist;
+      const nz = dz / dist;
+      return Math.atan2(hfwdX * nz - hfwdZ * nx, hfwdX * nx + hfwdZ * nz);
+    };
+
+    const angleShort = calcAngle(targetShort);
+    const angleMid = calcAngle(targetMid);
+    const angleFar = calcAngle(targetFar);
+
+    const ppGain = 3.5;
+    let steerRaw = angleShort * 0.2 + angleMid * 0.4 + angleFar * 0.4;
+    let steer = steerRaw * ppGain;
+    steer = Math.max(-1, Math.min(1, steer));
+
+    const crossTrackCorrection = 1.2;
+    const rlIdx = Math.floor(this.trackT * rlLen) % rlLen;
+    const rlP = racingLinePoints[rlIdx];
+    const rlTan = catmullRomTangent(pts, this.trackT);
+    const tLen = Math.sqrt(rlTan[0] ** 2 + rlTan[2] ** 2) || 1;
+    const nx = -rlTan[2] / tLen;
+    const nz = rlTan[0] / tLen;
+    const dx = kart.x - rlP[0];
+    const dz = kart.z - rlP[2];
+    const crossDist = dx * nx + dz * nz;
+    const normalizedError = crossDist / halfW;
+    steer += -normalizedError * crossTrackCorrection * 0.3;
+    steer = Math.max(-1, Math.min(1, steer));
+
+    let throttle = 1.0;
+    let brake = 0;
+
+    const lookAheadDist = Math.max(60, (speed * speed) / (2 * 45) + 1.5 * speed);
+    const arcLen = lookAheadDist;
+    const lookAheadT = (this.trackT + arcLen / (this.trackLength || 700)) % 1;
+    const aheadIdx = Math.round(lookAheadT * N) % N;
+    const speedLimit = speedLimitMap[aheadIdx] || 30;
+
+    const brakeTrigger = 1.12;
+    if (speed > speedLimit * brakeTrigger) {
+      brake = Math.min(1, (speed - speedLimit) / speedLimit * 2);
+      throttle = 0;
+    } else if (speed > speedLimit * 1.02) {
+      throttle = 0.3;
+    } else {
+      throttle = Math.max(0.3, 1.0 - (speed / speedLimit) * 0.3);
+    }
+
+    if (Math.abs(normalizedError) > 0.85) { throttle *= 0.9; }
+    if (Math.abs(normalizedError) > 0.93) { throttle *= 0.8; }
+    if (Math.abs(normalizedError) > 0.97 && speed > 25) { brake = Math.max(brake, 0.1); }
+
+    if (this.recoveryFrames > 0) {
+      this.recoveryFrames--;
+      steer = -normalizedError * 2;
+      steer = Math.max(-1, Math.min(1, steer));
+      throttle = 0.5;
+      brake = 0;
+    }
+
+    if (this.frameCount < 30) {
+      throttle = Math.min(throttle, 0.6);
+      steer *= 0.5;
+    }
+
+    kart.steerInput = steer;
+    kart.throttle = throttle;
+    kart.brake = brake;
+  }
+
+  updateTrackT(pts) {
+    const rlLen = racingLinePoints.length;
+    let bestT = this.trackT;
+    let bestDist = Infinity;
+    for (let dt = -0.02; dt <= 0.02; dt += 0.001) {
+      const t = ((bestT + dt) % 1 + 1) % 1;
+      const idx = Math.floor(t * rlLen) % rlLen;
+      const p = racingLinePoints[idx];
+      const d = (kart.x - p[0]) ** 2 + (kart.z - p[2]) ** 2;
+      if (d < bestDist) { bestDist = d; bestT = t; }
+    }
+    this.trackT = bestT;
+    return bestT;
+  }
+}
+
+function computeRacingLineOffsets(pts, trackWidth) {
+  const Npts = N;
+  const halfW = trackWidth / 2 * 0.85;
+  const dt = 0.015;
+
+  const trueCurv = new Float64Array(Npts);
+  for (let i = 0; i < Npts; i++) {
+    const t = i / Npts;
+    const pM = catmullRomPoint(pts, ((t - dt) % 1 + 1) % 1);
+    const pB = catmullRomPoint(pts, t);
+    const pP = catmullRomPoint(pts, (t + dt) % 1);
+    const xp = (pP[0] - pM[0]) / (2 * dt);
+    const zp = (pP[2] - pM[2]) / (2 * dt);
+    const xpp = (pP[0] - 2 * pB[0] + pM[0]) / (dt * dt);
+    const zpp = (pP[2] - 2 * pB[2] + pM[2]) / (dt * dt);
+    const spd = Math.sqrt(xp * xp + zp * zp);
+    trueCurv[i] = (xp * zpp - zp * xpp) / Math.max(spd * spd * spd, 1e-10);
+  }
+
+  let smC = new Float64Array(trueCurv);
+  smC = smooth1d(smC, 30);
+
+  const ampl = new Float64Array(Npts);
+  for (let i = 0; i < Npts; i++) {
+    ampl[i] = Math.sign(smC[i]) * Math.pow(Math.abs(smC[i]), 0.6);
+  }
+
+  const LOOK = 40;
+  const driving = new Float64Array(Npts);
+  for (let i = 0; i < Npts; i++) {
+    let maxAhead = 0;
+    let maxBehind = 0;
+    for (let j = 1; j <= LOOK; j++) {
+      const decay = 1.0 - j / (LOOK * 1.2);
+      const aheadIdx = (i + j) % Npts;
+      const behindIdx = ((i - j) % Npts + Npts) % Npts;
+      const aVal = Math.abs(ampl[aheadIdx]) * decay;
+      const bVal = Math.abs(ampl[behindIdx]) * decay;
+      if (aVal > maxAhead) maxAhead = aVal;
+      if (bVal > maxBehind) maxBehind = bVal;
+    }
+    const local = ampl[i];
+    const localAbs = Math.abs(local);
+    if (localAbs > maxAhead * 0.8 && localAbs > maxBehind * 0.8) {
+      driving[i] = local;
+    } else if (maxAhead > localAbs * 1.2) {
+      const aheadSign = Math.sign(ampl[(i + LOOK) % Npts]);
+      driving[i] = -maxAhead * 0.8 * (aheadSign || 1);
+    } else if (maxBehind > localAbs * 1.2) {
+      const behindSign = Math.sign(ampl[((i - LOOK) % Npts + Npts) % Npts]);
+      driving[i] = -maxBehind * 0.8 * (behindSign || 1);
+    } else {
+      driving[i] = local * 0.3;
+    }
+  }
+
+  const meanD = driving.reduce((a, b) => a + b, 0) / Npts;
+  for (let i = 0; i < Npts; i++) driving[i] -= meanD;
+
+  let offsets = new Float64Array(Npts);
+  const ALPHA = 0.15;
+  const RELAX_ITER = 5000;
+  for (let iter = 0; iter < RELAX_ITER; iter++) {
+    for (let i = 0; i < Npts; i++) {
+      const left = offsets[(i - 1 + Npts) % Npts];
+      const right = offsets[(i + 1) % Npts];
+      const target = (left + right + driving[i]) / 2;
+      offsets[i] += ALPHA * (target - offsets[i]);
+    }
+  }
+
+  let maxOff = 0;
+  for (let i = 0; i < Npts; i++) maxOff = Math.max(maxOff, Math.abs(offsets[i]));
+  if (maxOff > 0) {
+    const scale = halfW * 0.8 / maxOff;
+    for (let i = 0; i < Npts; i++) offsets[i] *= scale;
+  }
+
+  offsets = smooth1d(offsets, 30);
+
+  for (let i = 0; i < Npts; i++) {
+    offsets[i] = Math.max(-halfW, Math.min(halfW, offsets[i]));
+  }
+
+  curvatureData = Array.from(smC);
+  return { offsets, N: Npts };
+}
+
+function computeSpeedLimitMap(linePts) {
+  return computeSpeedLimitMapFromLine(linePts);
+}
+
+function computeSpeedLimitMapFromLine(linePts) {
+  const mu = 0.85;
+  const scaleFactor = 1.2;
+  const floor = 8;
+  const n = linePts.length;
+  const STRAIGHT_THRESHOLD = 0.001;
+
+  const perSegAngle = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = linePts[i];
+    const b = linePts[(i + 1) % n];
+    const c = linePts[(i + 2) % n];
+    const dx1 = b[0] - a[0], dz1 = b[2] - a[2];
+    const dx2 = c[0] - b[0], dz2 = c[2] - b[2];
+    const cross = dx1 * dz2 - dz1 * dx2;
+    const l1 = Math.sqrt(dx1 * dx1 + dz1 * dz1) || 0.001;
+    const l2 = Math.sqrt(dx2 * dx2 + dz2 * dz2) || 0.001;
+    perSegAngle[i] = Math.asin(Math.min(1, Math.abs(cross) / (l1 * l2)));
+  }
+
+  const map = new Float64Array(n);
+  const WIN = 10;
+  for (let i = 0; i < n; i++) {
+    let sum = 0;
+    for (let j = -WIN; j <= WIN; j++) {
+      sum += perSegAngle[(i + j + n) % n];
+    }
+    const avgAngle = sum / (WIN * 2 + 1);
+    if (avgAngle < STRAIGHT_THRESHOLD) {
+      map[i] = 83.3;
+    } else {
+      const R = 1.2 / avgAngle;
+      const v = Math.sqrt(Math.max(floor * floor, mu * GRAVITY * R * scaleFactor));
+      map[i] = Math.min(v, 83.3);
+    }
+  }
+
+  return map;
+}
+
+function computeOptimalLapTime() {
+  if (!racingLinePoints || racingLinePoints.length === 0 || speedLimitMap.length === 0) return null;
+
+  const BRAKE_DECEL = 45;
+  const MAX_SPEED = 83.3;
+  const n = racingLinePoints.length;
+
+  const ds = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    ds[i] = dist2D(racingLinePoints[i], racingLinePoints[next]);
+  }
+
+  const speedLimit = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    speedLimit[i] = Math.min(speedLimitMap[i] || MAX_SPEED, MAX_SPEED);
+  }
+
+  const vBrake = new Float64Array(n);
+  for (let i = 0; i < n; i++) vBrake[i] = speedLimit[i];
+  for (let iter = 0; iter < n; iter++) {
+    for (let i = 0; i < n; i++) {
+      const next = (i + 1) % n;
+      const vMax = Math.sqrt(vBrake[next] * vBrake[next] + 2 * BRAKE_DECEL * ds[i]);
+      if (vBrake[i] > vMax) vBrake[i] = vMax;
+    }
+  }
+
+  const accelProfile = (startSpeed) => {
+    const v = new Float64Array(n);
+    for (let i = 0; i < n; i++) v[i] = speedLimit[i];
+    v[0] = startSpeed;
+    for (let iter = 0; iter < n; iter++) {
+      for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        let accel;
+        if (v[i] < 20) accel = 20;
+        else if (v[i] < 50) accel = 12;
+        else accel = 8;
+        const vMax = Math.sqrt(v[i] * v[i] + 2 * accel * ds[i]);
+        const vNext = Math.min(vMax, speedLimit[next]);
+        if (v[next] > vNext) v[next] = vNext;
+      }
+    }
+    return v;
+  };
+
+  let vAccel = accelProfile(50);
+  let prevTotal = 0;
+  for (let pass = 0; pass < 5; pass++) {
+    const startV = vAccel[0];
+    vAccel = accelProfile(startV);
+    let total = 0;
+    for (let i = 0; i < n; i++) total += ds[i] / vAccel[i];
+    if (Math.abs(total - prevTotal) < 0.01) break;
+    prevTotal = total;
+  }
+
+  const vOpt = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    vOpt[i] = Math.min(speedLimit[i], vBrake[i], vAccel[i]);
+    vOpt[i] = Math.max(vOpt[i], 3);
+  }
+
+  let totalTime = 0;
+  for (let i = 0; i < n; i++) {
+    totalTime += ds[i] / vOpt[i];
+  }
+
+  return { totalTime, vOpt, ds };
+}
+
+function updateCPSpeeds() {
+  const el = document.getElementById('cpSpeeds');
+  if (!el || !speedLimitMap.length || !racingLinePoints.length) { if (el) el.innerHTML = ''; return; }
+  let html = '';
+  const step = Math.max(1, Math.floor(N / 40));
+  let cpNum = 0;
+  for (let i = 0; i < N; i += step) {
+    const v = speedLimitMap[i] || 0;
+    const kmh = (v * 3.6).toFixed(0);
+    const pct = Math.min(100, v / 83.3 * 100);
+    const color = v > 60 ? '#2ecc71' : v > 30 ? '#f39c12' : '#e74c3c';
+    html += '<div style="display:flex;align-items:center;gap:4px;margin:1px 0">';
+    html += '<span style="width:24px;color:#888">' + cpNum + '</span>';
+    html += '<div style="flex:1;height:6px;background:#21262d;border-radius:3px;overflow:hidden">';
+    html += '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px"></div>';
+    html += '</div>';
+    html += '<span style="width:50px;text-align:right;color:' + color + ';font-weight:600">' + kmh + '</span>';
+    html += '</div>';
+    cpNum++;
+  }
+  el.innerHTML = html;
+}
+
+async function selectTrack(idx) {
+  if (!TRACKS[idx]) return;
+  currentTrack = TRACKS[idx];
+  currentTrackIdx = idx;
+  const pts = currentTrack.points;
+  const halfW = currentTrack.trackWidth / 2;
+
+  const result = computeRacingLineOffsets(pts, currentTrack.trackWidth);
+  racingOffsets = result.offsets;
+
+  racingLinePoints = [];
+  racingLineArcTable = [];
+  let arcAccum = 0;
+  const startP = catmullRomPoint(pts, 0);
+  racingLinePoints.push([startP[0], 0, startP[2]]);
+  for (let i = 1; i < N; i++) {
+    const t = i / N;
+    const p = catmullRomPoint(pts, t);
+    const tan = catmullRomTangent(pts, t);
+    const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+    const tx = tan[0] / tLen, tz = tan[2] / tLen;
+    const nx = -tz, nz = tx;
+    const off = racingOffsets[i];
+    let candX = p[0] + nx * off;
+    let candZ = p[2] + nz * off;
+    const prev = racingLinePoints[i - 1];
+    const dx = candX - prev[0];
+    const dz = candZ - prev[2];
+    const fwdDot = dx * tx + dz * tz;
+    if (fwdDot < 0) {
+      const pushFwd = -fwdDot + 0.1;
+      candX += tx * pushFwd;
+      candZ += tz * pushFwd;
+    }
+    racingLinePoints.push([candX, 0, candZ]);
+    arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+    racingLineArcTable.push(arcAccum);
+  }
+
+  speedLimitMap = computeSpeedLimitMap(racingLinePoints);
+  updateCPSpeeds();
+
+  console.log('racingLinePoints:', racingLinePoints.length, 'speedLimitMap:', speedLimitMap.length);
+  const optResult = computeOptimalLapTime();
+  console.log('optResult:', optResult);
+  if (optResult) {
+    document.getElementById('pOptTime').textContent = optResult.totalTime.toFixed(2) + 's';
+    const avgSpeed = arcAccum / optResult.totalTime * 3.6;
+    document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
+    document.getElementById('pOptTotal').textContent = (optResult.totalTime * TOTAL_LAPS).toFixed(1) + 's';
+  } else {
+    console.log('computeOptimalLapTime returned null');
+  }
+
+  kart = new Kart2D();
+  ai = new AIController2D();
+  ai.trackLength = arcAccum;
+
+  const startT = catmullRomTangent(pts, 0);
+  const startH = Math.atan2(startT[0], startT[2]);
+  kart.reset(startP[0], startP[2], startH);
+  ai.init(pts);
+
+  raceTime = 0;
+  lapCount = 0;
+  wallHits = 0;
+  bestLap = Infinity;
+  lapStartTime = 0;
+  prevCrossed = false;
+
+  document.getElementById('pWidth').textContent = currentTrack.trackWidth + ' m';
+  document.getElementById('pHalfW').textContent = (currentTrack.trackWidth / 2 * 0.85).toFixed(1) + ' m';
+  let minOff = Infinity, maxOff = -Infinity;
+  for (let i = 0; i < racingOffsets.length; i++) {
+    if (racingOffsets[i] < minOff) minOff = racingOffsets[i];
+    if (racingOffsets[i] > maxOff) maxOff = racingOffsets[i];
+  }
+  document.getElementById('pOffRange').textContent = minOff.toFixed(1) + ' ~ ' + maxOff.toFixed(1) + ' m';
+  let maxC = 0;
+  for (let i = 0; i < curvatureData.length; i++) {
+    if (Math.abs(curvatureData[i]) > maxC) maxC = Math.abs(curvatureData[i]);
+  }
+  document.getElementById('pMaxCurv').textContent = maxC.toFixed(4);
+  document.getElementById('pPathLen').textContent = arcAccum.toFixed(0) + ' m';
+
+  if (await loadSavedLine()) {
+    document.getElementById('saveStatus').textContent = '已加载保存的线路';
+    setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 2000);
+  }
+}
+
+function draw() {
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, w, h);
+
+  if (!currentTrack) return;
+  const pts = currentTrack.points;
+  const halfW = currentTrack.trackWidth / 2;
+
+  const allPts = [];
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const p = catmullRomPoint(pts, t);
+    allPts.push(p);
+  }
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const p of allPts) {
+    if (p[0] < minX) minX = p[0];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[2] < minZ) minZ = p[2];
+    if (p[2] > maxZ) maxZ = p[2];
+  }
+  const margin = halfW + 15;
+  minX -= margin; maxX += margin;
+  minZ -= margin; maxZ += margin;
+  const rangeX = maxX - minX;
+  const rangeZ = maxZ - minZ;
+  const scale = Math.min(w / rangeX, h / rangeZ) * 0.92;
+  const offX = (w - rangeX * scale) / 2;
+  const offZ = (h - rangeZ * scale) / 2;
+
+  const toScreen = (x, z) => [
+    offX + (x - minX) * scale,
+    offZ + (z - minZ) * scale
+  ];
+
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = scale * currentTrack.trackWidth + 6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const p = catmullRomPoint(pts, t);
+    const [sx, sz] = toScreen(p[0], p[2]);
+    if (i === 0) ctx.moveTo(sx, sz);
+    else ctx.lineTo(sx, sz);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = scale * currentTrack.trackWidth;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const p = catmullRomPoint(pts, t);
+    const [sx, sz] = toScreen(p[0], p[2]);
+    if (i === 0) ctx.moveTo(sx, sz);
+    else ctx.lineTo(sx, sz);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  if (document.getElementById('showHeatmap').checked && curvatureData.length > 0 && racingLinePoints.length > 0) {
+    for (let i = 0; i < N; i++) {
+      const p = racingLinePoints[i];
+      const [sx, sz] = toScreen(p[0], p[2]);
+      const val = curvatureData[i] || 0;
+      const intensity = Math.min(1, Math.abs(val) * 300);
+      const r = val > 0 ? Math.floor(intensity * 255) : 0;
+      const b = val < 0 ? Math.floor(intensity * 255) : 0;
+      ctx.fillStyle = `rgba(${r},${Math.floor(intensity * 80)},${b},0.7)`;
+      ctx.beginPath();
+      ctx.arc(sx, sz, scale * halfW * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (document.getElementById('showSpeedMap').checked && speedLimitMap.length > 0 && racingLinePoints.length > 0) {
+    for (let i = 0; i < N; i++) {
+      const p = racingLinePoints[i];
+      const [sx, sz] = toScreen(p[0], p[2]);
+      const v = speedLimitMap[i] || 30;
+      const norm = Math.min(1, (v - 8) / 75);
+      const r = Math.floor((1 - norm) * 255);
+      const g = Math.floor(norm * 255);
+      ctx.fillStyle = `rgba(${r},${g},0,0.6)`;
+      ctx.beginPath();
+      ctx.arc(sx, sz, scale * halfW * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (document.getElementById('showRacingLine').checked && racingLinePoints.length > 0) {
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < racingLinePoints.length; i++) {
+      const p = racingLinePoints[i];
+      const [sx, sz] = toScreen(p[0], p[2]);
+      if (i === 0) ctx.moveTo(sx, sz);
+      else ctx.lineTo(sx, sz);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (document.getElementById('showAIPath').checked && ai && racingLinePoints.length > 0) {
+    ctx.strokeStyle = 'rgba(88,166,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    const startIdx = Math.floor(ai.trackT * N);
+    for (let i = 0; i < N; i++) {
+      const idx = (startIdx + i) % N;
+      const p = racingLinePoints[idx];
+      const [sx, sz] = toScreen(p[0], p[2]);
+      if (i === 0) ctx.moveTo(sx, sz);
+      else ctx.lineTo(sx, sz);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  screenTransform = { toScreen, scale };
+
+  if (editMode && editControlPoints.length > 0) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < editControlPoints.length; i++) {
+      const cp = editControlPoints[i];
+      const p = racingLinePoints[cp.idx];
+      if (!p) continue;
+      const [sx, sz] = toScreen(p[0], p[2]);
+      const [bx, bz] = toScreen(cp.baseX, cp.baseZ);
+      ctx.moveTo(bx, bz);
+      ctx.lineTo(sx, sz);
+    }
+    ctx.stroke();
+
+    for (let i = 0; i < editControlPoints.length; i++) {
+      const cp = editControlPoints[i];
+      const p = racingLinePoints[cp.idx];
+      if (!p) continue;
+      const [sx, sz] = toScreen(p[0], p[2]);
+      const isHover = (i === dragIdx);
+      ctx.fillStyle = isHover ? '#ff6b6b' : '#ffd93d';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = isHover ? 3 : 1.5;
+      ctx.beginPath();
+      ctx.arc(sx, sz, isHover ? 10 : 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i, sx, sz);
+    }
+  }
+
+  if (kart) {
+    const [kx, kz] = toScreen(kart.x, kart.z);
+    ctx.save();
+    ctx.translate(kx, kz);
+    ctx.rotate(-kart.heading + Math.PI / 2);
+
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(-scale * 1.5, -scale * 0.8, scale * 3, scale * 1.6);
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillRect(-scale * 0.5, -scale * 1.0, scale * 1.0, scale * 0.4);
+
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(233,69,96,0.3)';
+    ctx.lineWidth = 1;
+    const [tx, tz] = toScreen(kart.x + Math.sin(kart.heading) * 20, kart.z + Math.cos(kart.heading) * 20);
+    ctx.beginPath();
+    ctx.moveTo(kx, kz);
+    ctx.lineTo(tx, tz);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '11px monospace';
+  ctx.fillText(`${currentTrack.name} | ${currentTrack.trackWidth}m wide | ${N} pts`, 10, h - 10);
+}
+
+function step(timestamp) {
+  if (!running) return;
+  const dt = Math.min(0.05, 1 / 60);
+
+  const pts = currentTrack.points;
+  ai.getInput(pts);
+  kart.update(dt);
+  kart.enforceBarrier(pts);
+  ai.updateTrackT(pts);
+
+  raceTime += dt;
+
+  const t = ai.trackT;
+  const crossedNow = t < 0.02 || t > 0.98;
+  if (crossedNow && !prevCrossed && raceTime > 2) {
+    const lapTime = raceTime - lapStartTime;
+    if (lapTime > 5 && lapTime < bestLap) bestLap = lapTime;
+    lapCount++;
+    lapStartTime = raceTime;
+    if (lapCount >= TOTAL_LAPS) {
+      running = false;
+      document.getElementById('startBtn').style.display = '';
+      document.getElementById('stopBtn').style.display = 'none';
+    }
+  }
+  prevCrossed = crossedNow;
+
+  document.getElementById('sTime').textContent = raceTime.toFixed(1) + 's';
+  document.getElementById('sLap').textContent = `${Math.min(lapCount, TOTAL_LAPS)}/${TOTAL_LAPS}`;
+  document.getElementById('sSpeed').textContent = (kart.speed * 3.6).toFixed(0) + ' km/h';
+  document.getElementById('sPos').textContent = (t * 100).toFixed(0) + '%';
+  document.getElementById('sWall').textContent = wallHits;
+  document.getElementById('sBest').textContent = bestLap < Infinity ? bestLap.toFixed(2) + 's' : '--';
+
+  draw();
+  animId = requestAnimationFrame(step);
+}
+
+async function init() {
+  try {
+    const resp = await fetch(TRACKS_JSON);
+    const data = await resp.json();
+    TRACKS = data.tracks;
+  } catch (e) {
+    console.error('Failed to load tracks:', e);
+    return;
+  }
+
+  const sel = document.getElementById('trackSelect');
+  sel.innerHTML = '';
+  TRACKS.forEach((t, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${t.name} (${t.difficulty})`;
+    sel.appendChild(opt);
+  });
+
+  const cityIdx = TRACKS.findIndex(t => t.id === 'city-streets');
+  if (cityIdx >= 0) sel.value = cityIdx;
+
+  sel.addEventListener('change', async () => {
+    if (running) stopSim();
+    await selectTrack(parseInt(sel.value));
+    draw();
+  });
+
+  document.getElementById('difficultySelect').addEventListener('change', (e) => {
+    difficulty = parseInt(e.target.value);
+  });
+
+  ['showRacingLine', 'showHeatmap', 'showSpeedMap', 'showAIPath'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { if (!running) draw(); });
+  });
+
+  resize();
+  window.addEventListener('resize', () => { resize(); if (!running) draw(); });
+
+  await selectTrack(parseInt(sel.value));
+  draw();
+}
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+async function startSim() {
+  if (running) return;
+  await selectTrack(parseInt(document.getElementById('trackSelect').value));
+  running = true;
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = '';
+  animId = requestAnimationFrame(step);
+}
+
+function stopSim() {
+  running = false;
+  if (animId) cancelAnimationFrame(animId);
+  document.getElementById('startBtn').style.display = '';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+document.getElementById('startBtn').addEventListener('click', startSim);
+document.getElementById('stopBtn').addEventListener('click', stopSim);
+
+init();
+</script>
+</body>
+</html>
