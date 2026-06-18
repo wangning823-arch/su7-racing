@@ -49,16 +49,25 @@ canvas{display:block}
 #map-select button{font-size:1.3em;padding:12px 50px;border:2px solid #e94560;background:transparent;color:#e94560;cursor:pointer;border-radius:8px;transition:all 0.3s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #map-select button:hover,#map-select button:active{background:#e94560;color:#fff}
 #map-select button:disabled{opacity:0.4;cursor:not-allowed}
-/* 触摸控制区域：摇杆控制方向+油门刹车，漂移按钮单独 */
 #touch-controls{position:absolute;bottom:0;left:0;width:100%;height:50%;pointer-events:none;z-index:15;display:none}
-/* 摇杆放在右侧，上下推=油门/刹车，左右推=转向 */
-#joystick-zone{position:absolute;bottom:20px;right:20px;width:180px;height:180px;pointer-events:auto}
 .touch-btn{pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;font-weight:bold;user-select:none;-webkit-user-select:none}
 #drift-btn{position:absolute;bottom:20px;left:20px;width:80px;height:80px;border-radius:50%;background:rgba(233,69,96,0.6);border:3px solid #e94560;color:#fff;font-size:0.8em}
 #drift-btn:active,#drift-btn.active{background:rgba(233,69,96,0.9)}
+/* 竖屏提示 */
+#portrait-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-size:1.5em;text-align:center}
+#portrait-overlay .icon{font-size:4em;margin-bottom:20px;animation:rotate90 1.5s ease-in-out infinite}
+@keyframes rotate90{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+@media(max-width:768px) and (orientation:portrait){
+#portrait-overlay{display:flex}
+}
 </style>
 </head>
 <body>
+
+<div id="portrait-overlay">
+<div class="icon">📱↻</div>
+<div>请将手机横屏放置</div>
+</div>
 
 <div id="menu">
 <h1>3D卡丁车赛车</h1>
@@ -95,11 +104,9 @@ canvas{display:block}
 </div>
 
 <div id="touch-controls">
-<div id="joystick-zone"></div>
+<div id="tilt-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.5);font-size:1em;text-align:center;pointer-events:none;transition:opacity 0.5s">左右倾斜 → 转向&#10;前倾 → 刹车 · 右下漂移</div>
 <div id="drift-btn" class="touch-btn">漂移</div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.min.js"></script>
 
 <script type="importmap">
 {

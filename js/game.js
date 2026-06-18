@@ -122,11 +122,26 @@ export class Game {
 
     // Events
     window.addEventListener('resize', () => this.onResize());
-    document.getElementById('startBtn').addEventListener('click', () => this.showMapSelect());
+    document.getElementById('startBtn').addEventListener('click', () => {
+      // 请求全屏 + 锁定横屏
+      this.requestFullscreenAndLandscape();
+      this.showMapSelect();
+    });
     document.getElementById('restartBtn').addEventListener('click', () => this.showMapSelect());
 
     // Preload car model
     KartRenderer.preload();
+  }
+
+  requestFullscreenAndLandscape() {
+    const el = document.documentElement;
+    // 请求全屏
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    // 锁定横屏
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
   }
 
   startRace() {
@@ -200,7 +215,7 @@ export class Game {
           this._finishedNotified = true;
         }
       } else {
-        const rawInput = this.input.getInput();
+        const rawInput = this.input.getInput(this.player.physics.speed);
         playerInput = { ...rawInput, steer: -rawInput.steer };
       }
       const aiInputs = this.aiControllers.map((ai, i) => ai.getInput(this.karts[i + 1], this.karts));

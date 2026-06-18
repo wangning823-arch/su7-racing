@@ -655,12 +655,12 @@ class Kart2D {
   }
 
   update(dt) {
-    const mu = 0.85;
+    const mu = 3;
     const scaleFactor = 1.2;
     const maxSpeed = 83.3;
-    const engineForce = 120;
-    const brakeForce = 80;
-    const steerAngle = 0.5;
+    const engineForce = 2000;
+    const brakeForce = 6750;
+    const steerAngle = 1.0;
     const mass = 150;
 
     const sinH = Math.sin(this.heading);
@@ -675,7 +675,8 @@ class Kart2D {
 
     let accel = 0;
     if (this.throttle > 0 && this.speed < maxSpeed) {
-      accel = engineForce * this.throttle / mass;
+      const speedFactor = Math.max(0.3, 1.0 - this.speed / maxSpeed);
+      accel = engineForce * this.throttle * speedFactor / mass;
     }
     if (this.brake > 0) {
       accel -= brakeForce * this.brake / mass;
@@ -686,7 +687,7 @@ class Kart2D {
     this.vz += accel * forwardZ * dt;
 
     if (Math.abs(velDotRight) > 0.1) {
-      const friction = 0.92;
+      const friction = 0.1;
       this.vx -= velDotRight * rightX * (1 - friction);
       this.vz -= velDotRight * rightZ * (1 - friction);
     }
@@ -710,7 +711,7 @@ class Kart2D {
       const idx = Math.floor(t * rlLen) % rlLen;
       const p = racingLinePoints[idx];
       const d = (this.x - p[0]) ** 2 + (this.z - p[2]) ** 2;
-      if (d < bestDist) { bestDist = d; bestT = t; }
+      if (d < bestDist) { bestT = t; bestDist = d; }
     }
     this.trackT = bestT;
 
@@ -723,16 +724,15 @@ class Kart2D {
     const dx = this.x - p[0];
     const dz = this.z - p[2];
     const crossDist = dx * nx + dz * nz;
+    const absCross = Math.abs(crossDist);
+    const sign = crossDist > 0 ? 1 : -1;
 
-    if (Math.abs(crossDist) > halfW) {
-      const sign = crossDist > 0 ? 1 : -1;
+    if (absCross > halfW) {
       this.x = p[0] + nx * sign * halfW;
       this.z = p[2] + nz * sign * halfW;
 
-      const tan = catmullRomTangent(pts, bestT);
-      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
-      const fwdX = tan[0] / tLen;
-      const fwdZ = tan[2] / tLen;
+      const fwdX = rlTan[0] / tLen;
+      const fwdZ = rlTan[2] / tLen;
       const velDotFwd = this.vx * fwdX + this.vz * fwdZ;
       this.vx = fwdX * velDotFwd;
       this.vz = fwdZ * velDotFwd;
@@ -779,14 +779,13 @@ class AIController2D {
 
     this.frameCount++;
 
-    const halfW = (currentTrack ? currentTrack.trackWidth / 2 : 7) * 0.85;
     const rlLen = racingLinePoints.length;
 
-    const fwdRange = Math.max(0.03, Math.min(0.15, speed * 0.004));
-    const backRange = 0.01;
+    // 找最近的 racing line 点
     let bestT = this.trackT;
     let bestDist = Infinity;
-    for (let dt = -backRange; dt <= fwdRange; dt += 0.0003) {
+    const searchRange = Math.max(0.02, Math.min(0.1, speed * 0.003));
+    for (let dt = -0.01; dt <= searchRange; dt += 0.0003) {
       const t = ((this.trackT + dt) % 1 + 1) % 1;
       const idx = Math.floor(t * rlLen) % rlLen;
       const p = racingLinePoints[idx];
@@ -808,77 +807,91 @@ class AIController2D {
       return racingLinePoints[idx];
     };
 
-    const steerLookShort = 0.010;
-    const steerLookMid = 0.020;
-    const steerLookFar = 0.035;
-    const targetShort = getRLPoint(this.trackT + steerLookShort);
-    const targetMid = getRLPoint(this.trackT + steerLookMid);
-    const targetFar = getRLPoint(this.trackT + steerLookFar);
-
-    const hfwdX = Math.sin(heading);
-    const hfwdZ = Math.cos(heading);
-
-    const calcAngle = (target) => {
-      const dx = target[0] - kart.x;
-      const dz = target[2] - kart.z;
-      const dist = Math.sqrt(dx * dx + dz * dz) || 1;
-      const nx = dx / dist;
-      const nz = dz / dist;
-      return Math.atan2(hfwdX * nz - hfwdZ * nx, hfwdX * nx + hfwdZ * nz);
-    };
-
-    const angleShort = calcAngle(targetShort);
-    const angleMid = calcAngle(targetMid);
-    const angleFar = calcAngle(targetFar);
-
-    const ppGain = 3.5;
-    let steerRaw = angleShort * 0.2 + angleMid * 0.4 + angleFar * 0.4;
-    let steer = steerRaw * ppGain;
-    steer = Math.max(-1, Math.min(1, steer));
-
-    const crossTrackCorrection = 1.2;
     const rlIdx = Math.floor(this.trackT * rlLen) % rlLen;
     const rlP = racingLinePoints[rlIdx];
-    const rlTan = catmullRomTangent(pts, this.trackT);
-    const tLen = Math.sqrt(rlTan[0] ** 2 + rlTan[2] ** 2) || 1;
-    const nx = -rlTan[2] / tLen;
-    const nz = rlTan[0] / tLen;
-    const dx = kart.x - rlP[0];
-    const dz = kart.z - rlP[2];
-    const crossDist = dx * nx + dz * nz;
-    const normalizedError = crossDist / halfW;
-    steer += -normalizedError * crossTrackCorrection * 0.3;
-    steer = Math.max(-1, Math.min(1, steer));
 
-    let throttle = 1.0;
-    let brake = 0;
+    const sinH = Math.sin(heading);
+    const cosH = Math.cos(heading);
 
-    const lookAheadDist = Math.max(60, (speed * speed) / (2 * 45) + 1.5 * speed);
-    const arcLen = lookAheadDist;
-    const lookAheadT = (this.trackT + arcLen / (this.trackLength || 700)) % 1;
-    const aheadIdx = Math.round(lookAheadT * N) % N;
-    const speedLimit = speedLimitMap[aheadIdx] || 30;
+    // 多点预瞄：短/中/远，远的权重更高避免过冲
+    const targetShort = getRLPoint(this.trackT + 0.015);
+    const targetMid = getRLPoint(this.trackT + 0.030);
+    const targetFar = getRLPoint(this.trackT + 0.055);
+    const targetExtra = getRLPoint(this.trackT + 0.080);
 
-    const brakeTrigger = 1.12;
-    if (speed > speedLimit * brakeTrigger) {
-      brake = Math.min(1, (speed - speedLimit) / speedLimit * 2);
-      throttle = 0;
-    } else if (speed > speedLimit * 1.02) {
-      throttle = 0.3;
+    const calcErrAngle = (target) => {
+      const dx = target[0] - kart.x;
+      const dz = target[2] - kart.z;
+      return Math.atan2(cosH * dx - sinH * dz, sinH * dx + cosH * dz);
+    };
+
+    const errAngleShort = calcErrAngle(targetShort);
+    const errAngleMid = calcErrAngle(targetMid);
+    const errAngleFar = calcErrAngle(targetFar);
+    const errAngleExtra = calcErrAngle(targetExtra);
+
+    // S弯检测：短距离和远距离方向相反
+    const directionReversal = (errAngleShort * errAngleFar < 0) && Math.abs(errAngleFar) > 0.3;
+
+    let errAngle;
+    let steerGain;
+    if (directionReversal) {
+      // S弯：重短距离先完成当前弯，轻远距离预判下一个弯
+      errAngle = errAngleShort * 0.5 + errAngleMid * 0.3 + errAngleFar * 0.1 + errAngleExtra * 0.1;
+      steerGain = 1.2;
     } else {
-      throttle = Math.max(0.3, 1.0 - (speed / speedLimit) * 0.3);
+      errAngle = errAngleShort * 0.7 + errAngleMid * 0.3;
+      steerGain = 1.5;
     }
 
-    if (Math.abs(normalizedError) > 0.85) { throttle *= 0.9; }
-    if (Math.abs(normalizedError) > 0.93) { throttle *= 0.8; }
-    if (Math.abs(normalizedError) > 0.97 && speed > 25) { brake = Math.max(brake, 0.1); }
+    // 横向偏差修正：用实际距离（米）
+    const rlTanX = racingLinePoints[(rlIdx + 3) % rlLen][0] - racingLinePoints[((rlIdx - 3) % rlLen + rlLen) % rlLen][0];
+    const rlTanZ = racingLinePoints[(rlIdx + 3) % rlLen][2] - racingLinePoints[((rlIdx - 3) % rlLen + rlLen) % rlLen][2];
+    const rlTanLen = Math.sqrt(rlTanX * rlTanX + rlTanZ * rlTanZ) || 1;
+    const rightX = rlTanZ / rlTanLen;
+    const rightZ = -rlTanX / rlTanLen;
+    const crossTrack = (kart.x - rlP[0]) * rightX + (kart.z - rlP[2]) * rightZ;
+    const absCross = Math.abs(crossTrack);
+
+    // 油门/刹车：预判前方最低限速，提前刹车
+    const brakingDist = speed * speed / (2 * 45);
+    const lookAheadSteps = Math.ceil(brakingDist / 1.2);
+    let minSpeedLimit = speedLimitMap[rlIdx] || 30;
+    for (let i = 1; i <= Math.min(lookAheadSteps, 60); i++) {
+      const aheadIdx = (rlIdx + i) % rlLen;
+      const aheadLimit = speedLimitMap[aheadIdx] || 30;
+      if (aheadLimit < minSpeedLimit) minSpeedLimit = aheadLimit;
+    }
+
+    // 横向修正：弯道强，直道温和
+    // 横向修正：直接用偏移量，弯道更强
+    const curvatureFactor = 1.0 - (minSpeedLimit / 83.3);
+    const lateralGain = 0.3 + curvatureFactor * 0.5;
+    const lateralCorrection = -crossTrack * lateralGain;
+
+    let steer = Math.max(-1, Math.min(1, errAngle * steerGain + lateralCorrection));
+
+    // S弯降速，给更多反应时间
+    const targetSpeed = directionReversal ? minSpeedLimit * 0.5 : minSpeedLimit;
+    const speedError = (targetSpeed - speed) / Math.max(targetSpeed, 1);
+    let throttle = Math.max(0, Math.min(1, 0.5 + speedError * 2));
+    let brake = 0;
+
+    if (speedError < -0.05) {
+      brake = Math.min(1, -speedError * 3);
+      throttle = 0;
+    }
 
     if (this.recoveryFrames > 0) {
       this.recoveryFrames--;
-      steer = -normalizedError * 2;
+      const dxr = kart.x - rlP[0];
+      const dzr = kart.z - rlP[2];
+      const recLocalX = dxr * cosH - dzr * sinH;
+      const recLocalZ = dxr * sinH + dzr * cosH;
+      steer = -Math.atan2(recLocalX, recLocalZ) * 3.0;
       steer = Math.max(-1, Math.min(1, steer));
-      throttle = 0.5;
-      brake = 0;
+      throttle = speed > 15 ? 0.2 : 0.6;
+      brake = speed > 25 ? 0.3 : 0;
     }
 
     if (this.frameCount < 30) {
@@ -1000,7 +1013,7 @@ function computeSpeedLimitMap(linePts) {
 }
 
 function computeSpeedLimitMapFromLine(linePts) {
-  const mu = 0.85;
+  const mu = 3;
   const scaleFactor = 1.2;
   const floor = 8;
   const n = linePts.length;
@@ -1425,7 +1438,10 @@ function step(timestamp) {
   const pts = currentTrack.points;
   ai.getInput(pts);
   kart.update(dt);
-  kart.enforceBarrier(pts);
+  const hitWall = kart.enforceBarrier(pts);
+  if (hitWall && ai.recoveryFrames <= 0) {
+    ai.recoveryFrames = 15;
+  }
   ai.updateTrackT(pts);
 
   raceTime += dt;
