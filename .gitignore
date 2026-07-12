@@ -8,7 +8,8 @@ check_*.js
 node_modules
 package-lock.json
 
-# 测试产物（截图、结果JSON、轨迹数据）
-test/screenshots/
-test/*.png
-test/*.json
+# 测试文件和测试产物
+test/
+test-kart.js
+*.test.js
+*.spec.js

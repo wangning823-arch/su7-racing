@@ -59,6 +59,8 @@ canvas{display:block;width:100%;height:100%}
 <button onclick="smoothManualLine()" style="background:#1f6feb">平滑线路</button>
 <button onclick="saveRacingLine()" style="background:#e3b341;color:#000">保存线路</button>
 <span id="saveStatus" style="font-size:11px;color:#2ecc71;margin-left:4px"></span>
+<button id="optimizeBtn" style="background:#8957e5">自动优化</button>
+<div id="optimizeStatus" style="font-size:11px;color:#58a6ff;margin-top:4px;display:none"></div>
 <hr style="border-color:#30363d">
 <div id="stats">
 <div class="stat"><span>时间</span><span id="sTime">0.0s</span></div>
@@ -165,10 +167,12 @@ const ctx = canvas.getContext('2d');
 
 function buildEditControlPoints() {
   if (!currentTrack || !racingOffsets) return;
+  // 如果已有加载的控制点（来自优化文件），直接使用
+  if (editControlPoints.length > 0) return;
   const pts = currentTrack.points;
-  const STEP = 15;
   editControlPoints = [];
-  for (let i = 0; i < N; i += STEP) {
+  // 每个点都可以编辑（600个控制点）
+  for (let i = 0; i < N; i++) {
     const t = i / N;
     const p = catmullRomPoint(pts, t);
     const tan = catmullRomTangent(pts, t);
@@ -211,9 +215,10 @@ function rebuildFromControlPoints() {
     const p2 = ctrlPts2D[(idx + 1) % n];
     const p3 = ctrlPts2D[(idx + 2) % n];
     const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
-    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
-    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
-    racingLinePoints.push([x, 0, z]);
+    let x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    let z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    const [fx, fz] = clampToTrack(x, z, t, pts);
+    racingLinePoints.push([fx, 0, fz]);
     if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
     racingLineArcTable.push(arcAccum);
   }
@@ -318,9 +323,10 @@ canvas.addEventListener('mousemove', (e) => {
     const p2 = ctrlPts2D[(idx + 1) % n];
     const p3 = ctrlPts2D[(idx + 2) % n];
     const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
-    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
-    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
-    racingLinePoints[i] = [x, 0, z];
+    let x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    let z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    const [fx, fz] = clampToTrack(x, z, t, pts);
+    racingLinePoints[i] = [fx, 0, fz];
   }
 
   draw();
@@ -403,9 +409,10 @@ function smoothManualLine() {
     const p2 = ctrlPts2D[(idx + 1) % n];
     const p3 = ctrlPts2D[(idx + 2) % n];
     const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
-    const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
-    const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
-    racingLinePoints.push([x, 0, z]);
+    let x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+    let z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+    const [fx, fz] = clampToTrack(x, z, t, pts);
+    racingLinePoints.push([fx, 0, fz]);
     if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
     racingLineArcTable.push(arcAccum);
   }
@@ -420,6 +427,347 @@ function smoothManualLine() {
     document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
     document.getElementById('pOptTotal').textContent = (optResult.totalTime * TOTAL_LAPS).toFixed(1) + 's';
   }
+  if (!running) draw();
+}
+
+let optimizing = false;
+
+async function autoOptimizeRacingLine() {
+  if (optimizing || !currentTrack || !racingOffsets) return;
+  optimizing = true;
+
+  const btn = document.getElementById('optimizeBtn');
+  const statusEl = document.getElementById('optimizeStatus');
+  btn.disabled = true;
+  btn.textContent = '优化中...';
+  btn.style.background = '#666';
+  statusEl.style.display = '';
+  statusEl.textContent = '准备优化...';
+
+  const pts = currentTrack.points;
+  const halfW = currentTrack.trackWidth / 2 * 0.85;
+  const SAFE = halfW * 0.90; // 留10%余量防止Catmull-Rom插值穿过护栏
+
+  // 评估函数
+  const evaluate = (cps) => {
+    // 临时保存全局状态
+    const savedRL = racingLinePoints;
+    const savedArc = racingLineArcTable;
+    const savedSL = speedLimitMap;
+
+    // 从控制点重建赛车线
+    const ctrlPts2D = cps.map(cp => {
+      const p = catmullRomPoint(pts, cp.idx / N);
+      const tan = catmullRomTangent(pts, cp.idx / N);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+      return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
+    });
+
+    const linePoints = [];
+    const arcTable = [];
+    let arcAccum = 0;
+    for (let i = 0; i < N; i++) {
+      const t = i / N;
+      const n = ctrlPts2D.length;
+      const f = t * n;
+      const idx = Math.floor(f);
+      const frac = f - idx;
+      const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
+      const p1 = ctrlPts2D[idx % n];
+      const p2 = ctrlPts2D[(idx + 1) % n];
+      const p3 = ctrlPts2D[(idx + 2) % n];
+      const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
+      let x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
+      let z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
+
+      // 护栏安全检查
+      const cp_t = catmullRomPoint(pts, t);
+      const cp_tan = catmullRomTangent(pts, t);
+      const cp_tLen = Math.sqrt(cp_tan[0] ** 2 + cp_tan[2] ** 2) || 1;
+      const cp_nx = -cp_tan[2] / cp_tLen;
+      const cp_nz = cp_tan[0] / cp_tLen;
+      const off = (x - cp_t[0]) * cp_nx + (z - cp_t[2]) * cp_nz;
+      if (Math.abs(off) > halfW) {
+        const co = Math.sign(off) * halfW;
+        x = cp_t[0] + cp_nx * co;
+        z = cp_t[2] + cp_nz * co;
+      }
+
+      linePoints.push([x, 0, z]);
+      if (i > 0) arcAccum += dist2D(linePoints[i - 1], linePoints[i]);
+      arcTable.push(arcAccum);
+    }
+
+    racingLinePoints = linePoints;
+    racingLineArcTable = arcTable;
+    speedLimitMap = computeSpeedLimitMap(linePoints);
+    const result = computeOptimalLapTime();
+    const time = result?.totalTime ?? Infinity;
+
+    // 恢复（如果需要保留全局状态）
+    // racingLinePoints = savedRL; // 不恢复，保留最新的
+    return time;
+  };
+
+  // 从偏移量生成控制点
+  const generateCPs = (step, offsets) => {
+    const cps = [];
+    for (let i = 0; i < N; i += step) {
+      const t = i / N;
+      const p = catmullRomPoint(pts, t);
+      const tan = catmullRomTangent(pts, t);
+      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+      const nx = -tan[2] / tLen, nz = tan[0] / tLen;
+      cps.push({
+        idx: i,
+        offset: offsets ? offsets[i] : 0,
+        baseX: p[0], baseZ: p[2], nx, nz
+      });
+    }
+    return cps;
+  };
+
+  // 从粗粒度控制点插值到细粒度
+  const interpolateToFine = (coarseCPs, targetStep) => {
+    const coarseFull = new Float64Array(N);
+    for (const cp of coarseCPs) coarseFull[cp.idx] = cp.offset;
+    const indices = coarseCPs.map(cp => cp.idx);
+    for (let k = 0; k < indices.length; k++) {
+      const a = indices[k], b = indices[(k + 1) % indices.length];
+      let dist = b > a ? b - a : N - a + b;
+      for (let j = 0; j < dist; j++) {
+        const idx = (a + j) % N;
+        coarseFull[idx] = coarseCPs[k].offset + (coarseCPs[(k + 1) % coarseCPs.length].offset - coarseCPs[k].offset) * j / dist;
+      }
+    }
+    return generateCPs(targetStep, coarseFull);
+  };
+
+  // 保存/恢复块偏移
+  const saveBlock = (cps, start, end) => cps.slice(start, end).map(cp => cp.offset);
+  const restoreBlock = (cps, start, end, saved) => {
+    for (let i = 0; i < saved.length; i++) cps[start + i].offset = saved[i];
+  };
+
+  // 坐标下降 + 模拟退火（异步版，保持UI响应）
+  const blockSA = async (cps, options) => {
+    const {
+      blockSize = 5,
+      tempMax = 1.0,
+      tempMin = 0.001,
+      tempDecay = 0.85,
+      maxRounds = 50,
+      candidates = [-3, -2, -1, -0.5, 0.5, 1, 2, 3],
+      label = ''
+    } = options;
+
+    const nCP = cps.length;
+    let bestTime = evaluate(cps);
+    let temp = tempMax;
+    let round = 0;
+
+    while (temp > tempMin && round < maxRounds) {
+      round++;
+      let improved = false;
+
+      // 随机打乱顺序
+      const order = Array.from({ length: nCP }, (_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+
+      for (let oi = 0; oi < nCP; oi++) {
+        // 每10个点让出控制权给浏览器
+        if (oi % 10 === 0) await new Promise(r => requestAnimationFrame(r));
+
+        const i = order[oi];
+        const cp = cps[i];
+        const baseOff = cp.offset;
+        let bestOff = baseOff;
+        let bestTime_local = bestTime;
+
+        // 尝试各种偏移量
+        for (const c of candidates) {
+          const newOff = Math.max(-SAFE, Math.min(SAFE, baseOff + c));
+          if (newOff === baseOff) continue;
+          cp.offset = newOff;
+          const t = evaluate(cps);
+          if (t < bestTime_local) {
+            bestTime_local = t;
+            bestOff = newOff;
+          }
+        }
+
+        // 尝试块平移
+        if (blockSize > 1) {
+          const halfBlock = Math.floor(blockSize / 2);
+          const blockStart = Math.max(0, i - halfBlock);
+          const blockEnd = Math.min(nCP, i + halfBlock + 1);
+          const saved = saveBlock(cps, blockStart, blockEnd);
+
+          for (const c of candidates) {
+            let valid = true;
+            for (let b = blockStart; b < blockEnd; b++) {
+              const nb = Math.max(-SAFE, Math.min(SAFE, saved[b - blockStart] + c));
+              if (Math.abs(nb - saved[b - blockStart]) < 0.001 && c !== 0) { valid = false; break; }
+            }
+            if (!valid) continue;
+            for (let b = blockStart; b < blockEnd; b++) {
+              cps[b].offset = Math.max(-SAFE, Math.min(SAFE, saved[b - blockStart] + c));
+            }
+            const t = evaluate(cps);
+            if (t < bestTime_local) {
+              bestTime_local = t;
+              bestOff = null; // 块平移已应用
+            } else {
+              restoreBlock(cps, blockStart, blockEnd, saved);
+            }
+          }
+        }
+
+        if (bestTime_local < bestTime) {
+          if (bestOff !== null) cp.offset = bestOff;
+          bestTime = bestTime_local;
+          improved = true;
+        } else {
+          cp.offset = baseOff;
+          // SA：概率接受更差解
+          const delta = bestTime_local - bestTime;
+          if (Math.random() < Math.exp(-delta / temp)) {
+            // 接受（不更新bestTime）
+          }
+        }
+      }
+
+      temp *= tempDecay;
+      statusEl.textContent = `[${label}] 第${round}轮 T=${temp.toFixed(3)} — 最优: ${bestTime.toFixed(2)}s`;
+    }
+
+    return bestTime;
+  };
+
+  // ═══ 多尺度优化流程 ═══
+
+  // 1. 计算初始偏移量
+  const initResult = computeRacingLineOffsets(pts, currentTrack.trackWidth);
+  racingOffsets = initResult.offsets;
+
+  // 2. 多尺度层级
+  const scales = [
+    { step: 30, block: 8,  tempMax: 2.0,  tempMin: 0.05,  rounds: 30, label: '粗调(20点)' },
+    { step: 15, block: 5,  tempMax: 1.5,  tempMin: 0.02,  rounds: 30, label: '中粗(40点)' },
+    { step: 8,  block: 4,  tempMax: 1.0,  tempMin: 0.01,  rounds: 25, label: '中调(75点)' },
+    { step: 4,  block: 3,  tempMax: 0.8,  tempMin: 0.005, rounds: 20, label: '细调(150点)' },
+    { step: 2,  block: 3,  tempMax: 0.5,  tempMin: 0.003, rounds: 15, label: '精调(300点)' },
+    { step: 1,  block: 3,  tempMax: 0.3,  tempMin: 0.001, rounds: 10, label: '极精(600点)' },
+  ];
+
+  // 获取初始圈速作为基准
+  let currentCPs = generateCPs(scales[0].step, racingOffsets);
+  let bestTime = evaluate(currentCPs);
+  const startTime = bestTime;
+  statusEl.textContent = `基准圈速: ${bestTime.toFixed(2)}s — 开始多尺度优化...`;
+  await new Promise(r => setTimeout(r, 100));
+
+  for (const scale of scales) {
+    // 生成当前scale的控制点
+    if (scale.step === scales[0].step) {
+      currentCPs = generateCPs(scale.step, racingOffsets);
+    } else {
+      currentCPs = interpolateToFine(currentCPs, scale.step);
+    }
+
+    statusEl.textContent = `[${scale.label}] 开始优化...`;
+    await new Promise(r => setTimeout(r, 50));
+
+    await blockSA(currentCPs, {
+      blockSize: scale.block,
+      tempMax: scale.tempMax,
+      tempMin: scale.tempMin,
+      maxRounds: scale.rounds,
+      candidates: [-3, -2, -1, -0.5, 0.5, 1, 2, 3],
+      label: scale.label
+    });
+
+    // 提取偏移量用于下一级
+    const fullOffsets = new Float64Array(N);
+    for (const cp of currentCPs) fullOffsets[cp.idx] = cp.offset;
+    const indices = currentCPs.map(cp => cp.idx);
+    for (let k = 0; k < indices.length; k++) {
+      const a = indices[k], b = indices[(k + 1) % indices.length];
+      let dist = b > a ? b - a : N - a + b;
+      for (let j = 0; j < dist; j++) {
+        const idx = (a + j) % N;
+        fullOffsets[idx] = currentCPs[k].offset + (currentCPs[(k + 1) % currentCPs.length].offset - currentCPs[k].offset) * j / dist;
+      }
+    }
+    const smoothed = smooth1d(fullOffsets, 10);
+    for (let i = 0; i < N; i++) racingOffsets[i] = Math.max(-SAFE, Math.min(SAFE, smoothed[i]));
+
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  // 3. 逐点微调
+  currentCPs = generateCPs(1, racingOffsets);
+  bestTime = evaluate(currentCPs);
+  statusEl.textContent = `逐点微调中... 圈速: ${bestTime.toFixed(2)}s`;
+
+  const finePhases = [
+    { candidates: [-0.3, -0.15, -0.05, 0.05, 0.15, 0.3] },
+    { candidates: [-0.05, -0.01, 0.01, 0.05] },
+  ];
+
+  let fineImproved = true;
+  let fineRound = 0;
+  while (fineImproved) {
+    fineImproved = false;
+    fineRound++;
+    for (const phase of finePhases) {
+      for (let i = 0; i < currentCPs.length; i++) {
+        if (i % 50 === 0) await new Promise(r => requestAnimationFrame(r));
+        const cp = currentCPs[i];
+        const baseOff = cp.offset;
+        let bestOff = baseOff;
+        for (const c of phase.candidates) {
+          const newOff = Math.max(-SAFE, Math.min(SAFE, baseOff + c));
+          cp.offset = newOff;
+          const t = evaluate(currentCPs);
+          if (t < bestTime) {
+            bestTime = t;
+            bestOff = newOff;
+            fineImproved = true;
+          }
+        }
+        cp.offset = bestOff;
+      }
+    }
+  }
+
+  // 4. 最终重建
+  rebuildFromControlPoints();
+  const finalResult = computeOptimalLapTime();
+  if (finalResult) {
+    bestTime = finalResult.totalTime;
+    document.getElementById('pOptTime').textContent = bestTime.toFixed(2) + 's';
+    const pathLen = racingLineArcTable[racingLineArcTable.length - 1] || 0;
+    const avgSpeed = pathLen / bestTime * 3.6;
+    document.getElementById('pOptAvg').textContent = avgSpeed.toFixed(0) + ' km/h';
+    document.getElementById('pOptTotal').textContent = (bestTime * TOTAL_LAPS).toFixed(1) + 's';
+  }
+
+  // 更新编辑控制点
+  if (editMode) buildEditControlPoints();
+
+  const improved_ = ((startTime - bestTime) / startTime * 100).toFixed(1);
+  statusEl.textContent = `✅ 优化完成: ${startTime.toFixed(2)}s → ${bestTime.toFixed(2)}s (提升${improved_}%)`;
+
+  btn.disabled = false;
+  btn.textContent = '自动优化';
+  btn.style.background = '#8957e5';
+  optimizing = false;
+
   if (!running) draw();
 }
 
@@ -460,25 +808,38 @@ async function loadSavedLine() {
 
   let data = null;
 
+  // 优先级1: 预优化文件（服务端计算的最佳路径）
   try {
-    const raw = localStorage.getItem(key);
-    console.log('localStorage raw:', raw ? raw.substring(0, 80) + '...' : 'null');
-    if (raw) {
-      const localData = JSON.parse(raw);
-      console.log('localStorage trackId:', localData.trackId, 'offsets:', localData.offsets ? localData.offsets.length : 0);
-      if (localData.trackId === currentTrack.id && localData.offsets && localData.offsets.length === N) {
-        data = localData;
-        console.log('Loaded from localStorage ✓');
+    const resp = await fetch('data/racing-lines/' + currentTrack.id + '.json?t=' + Date.now());
+    if (resp.ok) {
+      const optData = await resp.json();
+      if (optData.offsets && optData.offsets.length === N) {
+        data = optData;
+        console.log('Loaded optimized line ✓');
       }
     }
-  } catch (e) { console.log('localStorage load error:', e); }
+  } catch (e) { console.log('Optimized line load error:', e); }
 
+  // 优先级2: localStorage（用户手动编辑保存的）
+  if (!data) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const localData = JSON.parse(raw);
+        if (localData.trackId === currentTrack.id && localData.offsets && localData.offsets.length === N) {
+          data = localData;
+          console.log('Loaded from localStorage ✓');
+        }
+      }
+    } catch (e) { console.log('localStorage load error:', e); }
+  }
+
+  // 优先级3: 服务器通用文件
   if (!data) {
     try {
       const resp = await fetch('data/racing-line-manual.json?t=' + Date.now());
       if (resp.ok) {
         const serverData = await resp.json();
-        console.log('Server trackId:', serverData.trackId, 'offsets:', serverData.offsets ? serverData.offsets.length : 0);
         if (serverData.trackId === currentTrack.id && serverData.offsets && serverData.offsets.length === N) {
           data = serverData;
           console.log('Loaded from server ✓');
@@ -510,32 +871,31 @@ async function loadSavedLine() {
 
     for (let i = 0; i < N; i++) racingOffsets[i] = data.offsets[i];
 
-    const ctrlPts2D = editControlPoints.map(cp => {
-      const p = catmullRomPoint(pts, cp.idx / N);
-      const tan = catmullRomTangent(pts, cp.idx / N);
-      const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
-      const nx = -tan[2] / tLen, nz = tan[0] / tLen;
-      return [p[0] + nx * cp.offset, p[2] + nz * cp.offset];
-    });
-
-    racingLinePoints = [];
-    racingLineArcTable = [];
-    for (let i = 0; i < N; i++) {
-      const t = i / N;
-      const n = ctrlPts2D.length;
-      const f = t * n;
-      const idx = Math.floor(f);
-      const frac = f - idx;
-      const p0 = ctrlPts2D[((idx - 1) % n + n) % n];
-      const p1 = ctrlPts2D[idx % n];
-      const p2 = ctrlPts2D[(idx + 1) % n];
-      const p3 = ctrlPts2D[(idx + 2) % n];
-      const tt = frac, tt2 = tt * tt, tt3 = tt2 * tt;
-      const x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*tt + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*tt2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*tt3);
-      const z = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*tt + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*tt2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*tt3);
-      racingLinePoints.push([x, 0, z]);
-      if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
-      racingLineArcTable.push(arcAccum);
+    // 优先使用预计算的points数组（与优化器结果完全一致）
+    if (data.points && data.points.length === N) {
+      racingLinePoints = [];
+      racingLineArcTable = [];
+      for (let i = 0; i < N; i++) {
+        racingLinePoints.push([data.points[i][0], 0, data.points[i][1]]);
+        if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+        racingLineArcTable.push(arcAccum);
+      }
+    } else {
+      // 回退：用偏移量+法线重建（旧格式兼容）
+      racingLinePoints = [];
+      racingLineArcTable = [];
+      for (let i = 0; i < N; i++) {
+        const t = i / N;
+        const p = catmullRomPoint(pts, t);
+        const tan = catmullRomTangent(pts, t);
+        const tLen = Math.sqrt(tan[0] ** 2 + tan[2] ** 2) || 1;
+        const nx = -tan[2] / tLen;
+        const nz = tan[0] / tLen;
+        const off = Math.max(-halfW, Math.min(halfW, racingOffsets[i]));
+        racingLinePoints.push([p[0] + nx * off, 0, p[2] + nz * off]);
+        if (i > 0) arcAccum += dist2D(racingLinePoints[i - 1], racingLinePoints[i]);
+        racingLineArcTable.push(arcAccum);
+      }
     }
   } else {
     for (let i = 0; i < N; i++) racingOffsets[i] = data.offsets[i];
@@ -613,6 +973,17 @@ function dist2D(a, b) {
 }
 
 function lerp(a, b, t) { return a + (b - a) * t; }
+
+// 赛道边界裁剪：确保Catmull-Rom插值后的路径不超出赛道宽度
+function clampToTrack(x, z, t, pts) {
+  const halfW = currentTrack.trackWidth / 2 * 0.85;
+  const cn = catmullRomPoint(pts, t), tn = catmullRomTangent(pts, t);
+  const tl = Math.sqrt(tn[0]**2 + tn[2]**2) || 1;
+  const nnx = -tn[2]/tl, nnz = tn[0]/tl;
+  const off = (x - cn[0])*nnx + (z - cn[2])*nnz;
+  if (Math.abs(off) > halfW) { const co = Math.sign(off) * halfW; return [cn[0]+nnx*co, cn[2]+nnz*co]; }
+  return [x, z];
+}
 
 function smooth1d(arr, iter) {
   const n = arr.length;
@@ -1151,6 +1522,7 @@ async function selectTrack(idx) {
   if (!TRACKS[idx]) return;
   currentTrack = TRACKS[idx];
   currentTrackIdx = idx;
+  editControlPoints = []; // 切换赛道时清空控制点
   const pts = currentTrack.points;
   const halfW = currentTrack.trackWidth / 2;
 
@@ -1338,11 +1710,24 @@ function draw() {
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 4]);
     ctx.beginPath();
+    // 每段细分3次，用1800点渲染更平滑
+    const SUB = 3;
     for (let i = 0; i < racingLinePoints.length; i++) {
       const p = racingLinePoints[i];
       const [sx, sz] = toScreen(p[0], p[2]);
       if (i === 0) ctx.moveTo(sx, sz);
       else ctx.lineTo(sx, sz);
+      // 段间插值
+      if (i < racingLinePoints.length - 1) {
+        const p2 = racingLinePoints[(i + 1) % racingLinePoints.length];
+        for (let s = 1; s < SUB; s++) {
+          const frac = s / SUB;
+          const mx = p[0] + (p2[0] - p[0]) * frac;
+          const mz = p[2] + (p2[2] - p[2]) * frac;
+          const [sx2, sz2] = toScreen(mx, mz);
+          ctx.lineTo(sx2, sz2);
+        }
+      }
     }
     ctx.closePath();
     ctx.stroke();
@@ -1355,12 +1740,22 @@ function draw() {
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
     const startIdx = Math.floor(ai.trackT * N);
+    const SUB = 3;
     for (let i = 0; i < N; i++) {
       const idx = (startIdx + i) % N;
       const p = racingLinePoints[idx];
       const [sx, sz] = toScreen(p[0], p[2]);
       if (i === 0) ctx.moveTo(sx, sz);
       else ctx.lineTo(sx, sz);
+      const nextIdx = (startIdx + i + 1) % N;
+      const p2 = racingLinePoints[nextIdx];
+      for (let s = 1; s < SUB; s++) {
+        const frac = s / SUB;
+        const mx = p[0] + (p2[0] - p[0]) * frac;
+        const mz = p[2] + (p2[2] - p[2]) * frac;
+        const [sx2, sz2] = toScreen(mx, mz);
+        ctx.lineTo(sx2, sz2);
+      }
     }
     ctx.stroke();
     ctx.setLineDash([]);
@@ -1369,8 +1764,9 @@ function draw() {
   screenTransform = { toScreen, scale };
 
   if (editMode && editControlPoints.length > 0) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
+    // 只画偏移线（控制点密集时简化显示）
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 0.5;
     ctx.beginPath();
     for (let i = 0; i < editControlPoints.length; i++) {
       const cp = editControlPoints[i];
@@ -1383,24 +1779,30 @@ function draw() {
     }
     ctx.stroke();
 
+    // 画控制点（小圆点，不画数字避免拥挤）
     for (let i = 0; i < editControlPoints.length; i++) {
       const cp = editControlPoints[i];
       const p = racingLinePoints[cp.idx];
       if (!p) continue;
       const [sx, sz] = toScreen(p[0], p[2]);
       const isHover = (i === dragIdx);
-      ctx.fillStyle = isHover ? '#ff6b6b' : '#ffd93d';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = isHover ? 3 : 1.5;
+      ctx.fillStyle = isHover ? '#ff6b6b' : 'rgba(255,217,61,0.6)';
       ctx.beginPath();
-      ctx.arc(sx, sz, isHover ? 10 : 6, 0, Math.PI * 2);
+      ctx.arc(sx, sz, isHover ? 6 : 2.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(i, sx, sz);
+    }
+    // 悬停时显示编号
+    if (dragIdx >= 0) {
+      const cp = editControlPoints[dragIdx];
+      const p = racingLinePoints[cp.idx];
+      if (p) {
+        const [sx, sz] = toScreen(p[0], p[2]);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('#' + dragIdx + ' off:' + cp.offset.toFixed(2), sx, sz - 8);
+      }
     }
   }
 
@@ -1485,6 +1887,7 @@ async function init() {
   const sel = document.getElementById('trackSelect');
   sel.innerHTML = '';
   TRACKS.forEach((t, i) => {
+    if (t.hidden) return; // 跳过隐藏赛道
     const opt = document.createElement('option');
     opt.value = i;
     opt.textContent = `${t.name} (${t.difficulty})`;
@@ -1539,6 +1942,7 @@ function stopSim() {
 
 document.getElementById('startBtn').addEventListener('click', startSim);
 document.getElementById('stopBtn').addEventListener('click', stopSim);
+document.getElementById('optimizeBtn').addEventListener('click', autoOptimizeRacingLine);
 
 init();
 </script>

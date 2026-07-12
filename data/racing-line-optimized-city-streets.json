@@ -765,5 +765,13 @@
       "offset": -1.7532646928655773
     }
   ],
-  "savedAt": "2026-06-19T06:18:51.840Z"
+  "savedAt": "2026-06-19T06:18:51.840Z",
+  "optimization": {
+    "initialTime": 18.791765440360997,
+    "finalTime": 16.092525104798757,
+    "improvement": 14.4,
+    "rounds": 9,
+    "pathLength": 635.8159184902197,
+    "avgSpeed": 142.236056284432
+  }
 }

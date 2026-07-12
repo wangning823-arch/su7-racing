@@ -338,7 +338,7 @@ export class Game {
   setupMapSelect() {
     const grid = document.getElementById('map-grid');
     grid.innerHTML = '';
-    for (const track of TRACKS) {
+    for (const track of TRACKS.filter(t => !t.hidden)) {
       const card = document.createElement('div');
       card.className = 'map-card';
       card.dataset.trackId = track.id;

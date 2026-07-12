@@ -179,13 +179,13 @@ export class AIController {
 
     if (!directionReversal && Math.abs(turnCross) > 0.01) {
       // 单弯入弯前：推到弯道外侧（外-内-外的"外"）
-      racingOffset = -turnCross * 1.2 * Math.min(1, Math.abs(errAngleShort) * 3);
+      racingOffset = -turnCross * 2.0 * Math.min(1, Math.abs(errAngleShort) * 4);
     }
     // S弯时不做额外偏移 — 车在上一个弯出口的外侧自然就是下一个弯的内侧
 
     // 安全限制：接近护栏时禁止继续向外偏移
-    if ((normalizedError > 0.6 && racingOffset > 0) ||
-        (normalizedError < -0.6 && racingOffset < 0)) {
+    if ((normalizedError > 0.85 && racingOffset > 0) ||
+        (normalizedError < -0.85 && racingOffset < 0)) {
       racingOffset = 0;
     }
 
